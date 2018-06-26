@@ -9,11 +9,30 @@ public class RenderCmd
     public Vector2Int coord;
 }
 
-public class CheckOrder : ComponentSystem {
+public class SimulationSystem : ComponentSystem {
+    /*
     struct Group
     {
         public ComponentDataArray<Powder> Powders;
-        public EntityArray Entities;
+        public int Length;
+    }
+
+    [Inject] Group m_PowderGroup;
+    */
+
+    protected override void OnUpdate()
+    {
+        Debug.Log("sim");
+    }
+}
+
+[AlwaysUpdateSystem]
+[UpdateAfter(typeof(SimulationSystem))]
+public class SpawnSystem : ComponentSystem
+{
+    struct Group
+    {
+        public ComponentDataArray<Powder> Powders;
         public int Length;
     }
 
@@ -21,20 +40,33 @@ public class CheckOrder : ComponentSystem {
 
     protected override void OnUpdate()
     {
-        for (var i = 0; i < m_PowderGroup.Length; ++i)
+        if (Input.GetMouseButtonDown(0) || Input.GetMouseButton(0))
         {
-            // Debug.Log(string.Format("x:{0}, y: {1}, index: {2}", m_PowderGroup.Powders[i].x, m_PowderGroup.Powders[i].y, m_PowderGroup.Powders[i].index));
+
+            Vector2Int pos = new Vector2Int((int)Input.mousePosition.x, (int)Input.mousePosition.y);
+            for (var i = 0; i < m_PowderGroup.Length; ++i)
+            {
+                if (m_PowderGroup.Powders[i].coord == pos)
+                {
+                    return;
+                }
+            }
+
+            PowderTypes.Spawn(PostUpdateCommands, pos, PowderRenderer.CurrentPowder);
+        }
+        else if (Input.GetMouseButtonUp(0))
+        {
+            Debug.Log("Up");
         }
     }
 }
 
-
-public class SyncRender : ComponentSystem
+[UpdateAfter(typeof(SpawnSystem))]
+public class PushRenderCmdsSystem : ComponentSystem
 {
     struct Group
     {
         public ComponentDataArray<Powder> Powders;
-        public EntityArray Entities;
         public int Length;
     }
 

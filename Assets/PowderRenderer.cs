@@ -13,6 +13,7 @@ public class PowderRenderer : MonoBehaviour
 
     public static List<RenderCmd> Cmds = new List<RenderCmd>();
     public static int NbCmds;
+    public static int CurrentPowder = 0;
 
     private void Awake()
     {
@@ -32,7 +33,7 @@ public class PowderRenderer : MonoBehaviour
             for (var i = 0; i < NbCmds; ++i)
             {
                 var cmd = Cmds[i];
-                Drawing2D.DrawPoint(cmd.coord, PowderTypes.values[cmd.type].color);
+                Drawing2D.DrawPoint(new Vector2(cmd.coord.x, Screen.height - cmd.coord.y), PowderTypes.values[cmd.type].color);
             }
         }
 
