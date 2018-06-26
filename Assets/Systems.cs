@@ -13,39 +13,72 @@ public class SimulationSystem : ComponentSystem
     struct Group
     {
         public ComponentDataArray<Powder> powders;
-        public EntityArray entities;
+        [ReadOnly] public EntityArray entities;
         public int Length;
     }
     [Inject] Group m_PowderGroup;
 
+    NativeHashMap<int, int> m_PositionsMap;
+
     protected override void OnUpdate()
     {
-        /*
-        var coordMap = new NativeHashMap<int, int>(m_PowderGroup.Length, Allocator.Temp);
+        m_PositionsMap = new NativeHashMap<int, int>(m_PowderGroup.Length, Allocator.Temp);
         for (var i = 0; i < m_PowderGroup.Length; ++i)
         {
             var key = PowderGame.CoordKey(m_PowderGroup.powders[i].coord);
-            coordMap.TryAdd(key, i);
+            m_PositionsMap.TryAdd(key, i);
         }
 
         for (var i = 0; i < m_PowderGroup.Length; ++i)
         {
             m_PowderGroup.powders[i] = Simulate(m_PowderGroup.powders[i], i);
         }
-        */
+
+        m_PositionsMap.Dispose();
     }
 
     private Powder Simulate(Powder p, int index)
     {
-        if (p.life == 0)
+        if (p.life == 0 || p.coord.x < 0 || p.coord.x > PowderGame.width || p.coord.y < 0 || p.coord.y > PowderGame.height)
         {
-            PostUpdateCommands.DestroyEntity(m_PowderGroup.entities[index]);
+            RemovePowder(index);
             return p;
         }
 
         if (p.life != -1)
         {
             p.life--;
+        }
+
+        switch (PowderTypes.values[p.type].state)
+        {
+            case PowderState.Gas:
+                var aboveIndex = GetPowderIndex(p.coord.x, p.coord.y + 1);
+                if (aboveIndex == -1)
+                {
+                    p.coord.y++;
+                }
+                break;
+            case PowderState.Liquid:
+                {
+                    var belowIndex = GetPowderIndex(p.coord.x, p.coord.y - 1);
+                    if (belowIndex == -1)
+                    {
+                        p.coord.y--;
+                    }
+                    break;
+                }
+            case PowderState.Solid:
+                break;
+            case PowderState.Powder:
+                {
+                    var belowIndex = GetPowderIndex(p.coord.x, p.coord.y - 1);
+                    if (belowIndex == -1)
+                    {
+                        p.coord.y--;
+                    }
+                    break;
+                }
         }
 
         switch (p.type)
@@ -81,6 +114,28 @@ public class SimulationSystem : ComponentSystem
 
 
         return p;
+    }
+
+    int GetPowderIndex(Vector2Int coord)
+    {
+        return GetPowderIndex(coord.x, coord.y);
+    }
+
+    int GetPowderIndex(int x, int y)
+    {
+        int index;
+        if (m_PositionsMap.TryGetValue(PowderGame.CoordKey(x, y), out index))
+        {
+            return index;
+        }
+
+        return -1;
+    }
+
+    void RemovePowder(int index)
+    {
+        PostUpdateCommands.DestroyEntity(m_PowderGroup.entities[index]);
+        PowderGame.powderCount--;
     }
 
     void Sand(ref Powder p, int index)
@@ -154,12 +209,15 @@ public class SpawnSystem : ComponentSystem
                 }
             }
 
-            PowderTypes.Spawn(PostUpdateCommands, pos, PowderGame.currentPowder);
+            Spawn(pos, PowderGame.currentPowder);
         }
-        else if (Input.GetMouseButtonUp(0))
-        {
-            Debug.Log("Up");
-        }
+    }
+
+    private void Spawn(Vector2Int pos, int type)
+    {
+        PostUpdateCommands.CreateEntity(PowderGame.powderArchetype);
+        PostUpdateCommands.SetComponent(PowderTypes.values[type].creator(pos));
+        ++PowderGame.powderCount;
     }
 }
 
