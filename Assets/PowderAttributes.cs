@@ -68,7 +68,7 @@ static class PowderTypes
     public static void Spawn(EntityCommandBuffer buffer, Vector2Int pos, int type)
     {
         buffer.CreateEntity();
-        buffer.AddComponent(new Powder() { coord = pos, type = type, life = 50 });
+        buffer.AddComponent(new Powder() { coord = pos, type = type, life = -1 });
     }
 }
 
