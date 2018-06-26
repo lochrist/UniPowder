@@ -215,9 +215,20 @@ public class SpawnSystem : ComponentSystem
 
     private void Spawn(Vector2Int pos, int type)
     {
-        PostUpdateCommands.CreateEntity(PowderGame.powderArchetype);
-        PostUpdateCommands.SetComponent(PowderTypes.values[type].creator(pos));
-        ++PowderGame.powderCount;
+        var size = 0;
+        for (var y = pos.y - PowderGame.brushSize; y <= pos.y + PowderGame.brushSize; ++y)
+        {
+            for (var x = pos.x - size; x <= pos.x + size; ++x)
+            {
+                PostUpdateCommands.CreateEntity(PowderGame.powderArchetype);
+                PostUpdateCommands.SetComponent(PowderTypes.values[type].creator(new Vector2Int(x, y)));
+                ++PowderGame.powderCount;
+            }
+
+            size++;
+        }
+
+        
     }
 }
 
