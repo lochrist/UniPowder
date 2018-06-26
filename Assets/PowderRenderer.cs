@@ -27,10 +27,12 @@ public class PowderRenderer : MonoBehaviour
 
         if (Event.current.type == EventType.Repaint)
         {
+            Drawing2D.DrawRect(PowderGame.worldRect, PowderGame.worldBoundariesColor, 2);
+
             for (var i = 0; i < nbCmds; ++i)
             {
                 var cmd = cmds[i];
-                Drawing2D.DrawPoint(new Vector2(cmd.coord.x, Screen.height - cmd.coord.y), PowderTypes.values[cmd.type].color);
+                Drawing2D.DrawPoint(new Vector2(cmd.coord.x + PowderGame.worldRect.x, Screen.height - PowderGame.worldRect.y - cmd.coord.y), PowderTypes.values[cmd.type].color);
             }
         }
 
