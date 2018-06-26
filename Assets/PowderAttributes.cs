@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System;
-using Unity.Entities;
+﻿using Unity.Entities;
 using UnityEngine;
 
 class PowderType
@@ -13,15 +10,16 @@ class PowderType
 
 static class PowderTypes
 {
-    public static int Sand = 0;
-    public static int Wood = 1;
-    public static int Fire = 2;
-    public static int Water = 3;
-    public static int Stone = 4;
-    public static int Smoke = 5;
-    public static int Steam = 6;
-    public static int Acid = 7;
-    public static int Glass = 8;
+    public const int Void = 0;
+    public const int Sand = 1;
+    public const int Fire = 2;
+    public const int Water = 3;
+    public const int Stone = 4;
+    public const int Smoke = 5;
+    public const int Steam = 6;
+    public const int Acid = 7;
+    public const int Glass = 8;
+    public const int Wood = 9;
 
     public static PowderType[] values;
 

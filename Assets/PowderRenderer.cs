@@ -1,38 +1,35 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using GraphicDNA;
-using UnityEngine.Networking;
 
 public class PowderRenderer : MonoBehaviour
 {
-    public Texture2D FontImage;
-    public TextAsset FontConfig;
-    public BitmapFont BitmapFont;
-    public Rect ParentRect;
+    public Texture2D fontImage;
+    public TextAsset fontConfig;
+    public BitmapFont bitmapFont;
+    public Rect parentRect;
 
-    public static List<RenderCmd> Cmds = new List<RenderCmd>();
-    public static int NbCmds;
-    public static int CurrentPowder = 0;
+    public static List<RenderCmd> cmds = new List<RenderCmd>();
+    public static int nbCmds;
 
     private void Awake()
     {
-        BitmapFont = null;
-        if (FontImage && FontConfig)
-            BitmapFont = BitmapFont.FromXml(FontConfig, FontImage);
+        bitmapFont = null;
+        if (fontImage && fontConfig)
+            bitmapFont = BitmapFont.FromXml(fontConfig, fontImage);
     }
 
     private void OnGUI()
     {
         // Set the 0,0 at the top-left corner of this panel
-        ParentRect = Drawing2D.GetWorldRect(this.transform as RectTransform);
-        Drawing2D.SetParentBounds(ParentRect);
+        parentRect = Drawing2D.GetWorldRect(this.transform as RectTransform);
+        Drawing2D.SetParentBounds(parentRect);
 
         if (Event.current.type == EventType.Repaint)
         {
-            for (var i = 0; i < NbCmds; ++i)
+            for (var i = 0; i < nbCmds; ++i)
             {
-                var cmd = Cmds[i];
+                var cmd = cmds[i];
                 Drawing2D.DrawPoint(new Vector2(cmd.coord.x, Screen.height - cmd.coord.y), PowderTypes.values[cmd.type].color);
             }
         }
