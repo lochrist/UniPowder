@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -9,20 +8,20 @@ public class RenderCmd
     public Vector2Int coord;
 }
 
-public class SimulationSystem : ComponentSystem {
-    /*
+public class SimulationSystem : ComponentSystem
+{
     struct Group
     {
-        public ComponentDataArray<Powder> Powders;
-        public int Length;
+        public ComponentDataArray<Powder> powders;
+        public int length;
     }
-
     [Inject] Group m_PowderGroup;
-    */
 
     protected override void OnUpdate()
     {
-        Debug.Log("sim");
+        var coordMap = new NativeHashMap<int, int>(m_PowderGroup.length, Allocator.Temp);
+
+
     }
 }
 
@@ -32,8 +31,8 @@ public class SpawnSystem : ComponentSystem
 {
     struct Group
     {
-        public ComponentDataArray<Powder> Powders;
-        public int Length;
+        public ComponentDataArray<Powder> powders;
+        public int length;
     }
 
     [Inject] Group m_PowderGroup;
@@ -44,15 +43,15 @@ public class SpawnSystem : ComponentSystem
         {
 
             Vector2Int pos = new Vector2Int((int)Input.mousePosition.x, (int)Input.mousePosition.y);
-            for (var i = 0; i < m_PowderGroup.Length; ++i)
+            for (var i = 0; i < m_PowderGroup.length; ++i)
             {
-                if (m_PowderGroup.Powders[i].coord == pos)
+                if (m_PowderGroup.powders[i].coord == pos)
                 {
                     return;
                 }
             }
 
-            PowderTypes.Spawn(PostUpdateCommands, pos, PowderRenderer.CurrentPowder);
+            PowderTypes.Spawn(PostUpdateCommands, pos, PowderGame.currentPowder);
         }
         else if (Input.GetMouseButtonUp(0))
         {
@@ -66,25 +65,24 @@ public class PushRenderCmdsSystem : ComponentSystem
 {
     struct Group
     {
-        public ComponentDataArray<Powder> Powders;
-        public int Length;
+        public ComponentDataArray<Powder> powders;
+        public int length;
     }
-
     [Inject] Group m_PowderGroup;
 
     protected override void OnUpdate()
     {
-        PowderRenderer.NbCmds = m_PowderGroup.Length;
+        PowderRenderer.nbCmds = m_PowderGroup.length;
 
-        for (var i = PowderRenderer.Cmds.Count; i < m_PowderGroup.Length; ++i)
+        for (var i = PowderRenderer.cmds.Count; i < m_PowderGroup.length; ++i)
         {
-            PowderRenderer.Cmds.Add(new RenderCmd());
+            PowderRenderer.cmds.Add(new RenderCmd());
         }
 
-        for (var i = 0; i < m_PowderGroup.Length; ++i)
+        for (var i = 0; i < m_PowderGroup.length; ++i)
         {
-            PowderRenderer.Cmds[i].coord = m_PowderGroup.Powders[i].coord;
-            PowderRenderer.Cmds[i].type = m_PowderGroup.Powders[i].type;
+            PowderRenderer.cmds[i].coord = m_PowderGroup.powders[i].coord;
+            PowderRenderer.cmds[i].type = m_PowderGroup.powders[i].type;
         }
     }
 }
