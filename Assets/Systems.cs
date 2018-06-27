@@ -99,8 +99,8 @@ public class SimulationSystem : ComponentSystem
                     {
                         var lowerLeftEmpty = GetPowderIndex(p.coord.x - 1, p.coord.y - 1) == -1;
                         var lowerRightEmpty = GetPowderIndex(p.coord.x + 1, p.coord.y - 1) == -1;
-                        var leftEmpty = GetPowderIndex(p.coord.x - 1, p.coord.y -1) == -1;
-                        var rightEmpty = GetPowderIndex(p.coord.x + 1, p.coord.y - 1) == -1;
+                        var leftEmpty = GetPowderIndex(p.coord.x - 1, p.coord.y) == -1;
+                        var rightEmpty = GetPowderIndex(p.coord.x + 1, p.coord.y) == -1;
                         if (lowerLeftEmpty)
                         {
                             if (lowerRightEmpty && PowderGame.Chance(0.5f))

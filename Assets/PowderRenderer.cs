@@ -54,7 +54,9 @@ public class PowderRenderer : MonoBehaviour
             for (var i = 0; i < nbCmds; ++i)
             {
                 var cmd = cmds[i];
-                Drawing2D.DrawPoint(new Vector2(cmd.coord.x + PowderGame.worldRect.x, Screen.height - PowderGame.worldRect.y - cmd.coord.y), PowderTypes.values[cmd.type].color);
+                Drawing2D.DrawPoint(new Vector2(cmd.coord.x + PowderGame.worldRect.x, Screen.height - PowderGame.worldRect.y - cmd.coord.y), 
+                    PowderTypes.values[cmd.type].color,
+                    2f);
             }
         }
 
