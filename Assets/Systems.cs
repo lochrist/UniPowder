@@ -272,40 +272,37 @@ public class SpawnSystem : ComponentSystem
 
     protected override void OnUpdate()
     {
-        if (Input.GetMouseButtonDown(0) /* || Input.GetMouseButton(0) */ /* && PowderGame.IsInWorld(Input.mousePosition)*/)
+        if (Input.GetMouseButtonDown(1))
         {
-            var mp = Input.mousePosition;
-            var pos = PowderGame.mainCamera.ScreenToWorldPoint(mp);
-            Debug.Log("Click: " + mp + " screenToWorld: " + pos);
-
-            // var pos = PowderGame.ToWorldCoord(Input.mousePosition);
-            /*
-            Debug.Log("MousePos: " + Input.mousePosition + 
+            var coord = PowderGame.ScreenToCoord(Input.mousePosition);
+            Debug.Log("MousePos: " + Input.mousePosition +
                 " ScreenToWorld: " + PowderGame.mainCamera.ScreenToWorldPoint(Input.mousePosition) +
-                " viewportToWorldPoint" + PowderGame.mainCamera.ViewportToWorldPoint(Input.mousePosition) + 
-                "Spawn: " + pos
-                    );
-                    */
-            var clikckCoord = new Vector2Int((int)pos.x, (int)pos.z);
+                " Coord: " + coord + 
+                " World: " + PowderGame.CoordToWorld(coord)
+            );
+        }
+        else if (Input.GetMouseButtonDown(0) /* || Input.GetMouseButton(0) */ /* && PowderGame.IsInWorld(Input.mousePosition)*/)
+        {
+            var coord = PowderGame.ScreenToCoord(Input.mousePosition);
             for (var i = 0; i < m_PowderGroup.Length; ++i)
             {
-                if (m_PowderGroup.powders[i].coord == clikckCoord)
+                if (m_PowderGroup.powders[i].coord == coord)
                 {
                     return;
                 }
             }
 
-            
-            Spawn(clikckCoord, PowderGame.currentPowder);
+            Debug.Log("Spawning at: " + coord);
+            Spawn(coord, PowderGame.currentPowder);
         }
     }
 
-    private void Spawn(Vector2Int pos, int type)
+    private void Spawn(Vector2Int coord, int type)
     {
         var size = 0;
-        for (var y = pos.y - PowderGame.brushSize; y <= pos.y + PowderGame.brushSize; ++y)
+        for (var y = coord.y - PowderGame.brushSize; y <= coord.y + PowderGame.brushSize; ++y)
         {
-            for (var x = pos.x - size; x <= pos.x + size; ++x)
+            for (var x = coord.x - size; x <= coord.x + size; ++x)
             {
                 PowderGame.Spawn(PostUpdateCommands, x, y, type);
             }

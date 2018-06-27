@@ -32,14 +32,16 @@ public class PowderRenderer : MonoBehaviour
         parentRect = Drawing2D.GetWorldRect(this.transform as RectTransform);
         Drawing2D.SetParentBounds(parentRect);
 
-        GUILayout.Space(PowderGame.worldRect.y - m_UIOffset);
+        GUILayout.Space(PowderGame.pixelWorldRect.y - m_UIOffset);
         GUILayout.BeginHorizontal();
-        GUILayout.Space(PowderGame.worldRect.x);
+        GUILayout.Space(PowderGame.pixelWorldRect.x);
         GUILayout.Label("Particles: " + PowderGame.powderCount);
         GUILayout.Space(30);
         var msec = m_DeltaTime * 1000.0f;
         var fps = 1.0f / m_DeltaTime;
         GUILayout.Label($"{msec:0.0} ms ({fps:0.} fps)");
+        GUILayout.Label(PowderTypes.values[PowderGame.currentPowder].name);
+        GUILayout.Space(30);
         GUILayout.FlexibleSpace();
         if (GUILayout.Button("Reset"))
         {
@@ -54,20 +56,20 @@ public class PowderRenderer : MonoBehaviour
 
         if (Event.current.type == EventType.Repaint)
         {
-            Drawing2D.DrawRect(PowderGame.worldRect, PowderGame.worldBoundariesColor, 2);
+            Drawing2D.DrawRect(PowderGame.pixelWorldRect, PowderGame.worldBoundariesColor, 2);
 
             for (var i = 0; i < nbCmds; ++i)
             {
                 var cmd = cmds[i];
-                Drawing2D.DrawPoint(new Vector2(cmd.coord.x + PowderGame.worldRect.x, Screen.height - PowderGame.worldRect.y - cmd.coord.y), 
+                Drawing2D.DrawPoint(new Vector2(cmd.coord.x + PowderGame.pixelWorldRect.x, Screen.height - PowderGame.pixelWorldRect.y - cmd.coord.y), 
                     PowderTypes.values[cmd.type].color,
                     2f);
             }
         }
 
-        GUILayout.Space(PowderGame.worldRect.height + m_UIOffset);
+        GUILayout.Space(PowderGame.pixelWorldRect.height + m_UIOffset);
         GUILayout.BeginHorizontal();
-        GUILayout.Space(PowderGame.worldRect.x);
+        GUILayout.Space(PowderGame.pixelWorldRect.x);
         // Powder buttons to support:
         // sand
         // water
