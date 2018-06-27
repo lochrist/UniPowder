@@ -62,7 +62,7 @@ public class SimulationSystem : ComponentSystem
     {
         if (p.life == 0 || p.coord.x < 0 || p.coord.x > PowderGame.width || p.coord.y < 0 || p.coord.y > PowderGame.height)
         {
-            RemovePowder(index);
+            // RemovePowder(index);
             return p;
         }
 
@@ -272,9 +272,13 @@ public class SpawnSystem : ComponentSystem
 
     protected override void OnUpdate()
     {
-        if (Input.GetMouseButtonDown(0) || Input.GetMouseButton(0) /* && PowderGame.IsInWorld(Input.mousePosition)*/)
+        if (Input.GetMouseButtonDown(0) /* || Input.GetMouseButton(0) */ /* && PowderGame.IsInWorld(Input.mousePosition)*/)
         {
-            var pos = PowderGame.ToWorldCoord(Input.mousePosition);
+            var mp = Input.mousePosition;
+            var pos = PowderGame.mainCamera.ScreenToWorldPoint(mp);
+            Debug.Log("Click: " + mp + " screenToWorld: " + pos);
+
+            // var pos = PowderGame.ToWorldCoord(Input.mousePosition);
             /*
             Debug.Log("MousePos: " + Input.mousePosition + 
                 " ScreenToWorld: " + PowderGame.mainCamera.ScreenToWorldPoint(Input.mousePosition) +
@@ -282,15 +286,17 @@ public class SpawnSystem : ComponentSystem
                 "Spawn: " + pos
                     );
                     */
+            var clikckCoord = new Vector2Int((int)pos.x, (int)pos.z);
             for (var i = 0; i < m_PowderGroup.Length; ++i)
             {
-                if (m_PowderGroup.powders[i].coord == pos)
+                if (m_PowderGroup.powders[i].coord == clikckCoord)
                 {
                     return;
                 }
             }
 
-            Spawn(new Vector2Int((int)pos.x, (int)pos.y), PowderGame.currentPowder);
+            
+            Spawn(clikckCoord, PowderGame.currentPowder);
         }
     }
 
@@ -307,7 +313,7 @@ public class SpawnSystem : ComponentSystem
         }
     }
 }
-
+/*
 [UpdateAfter(typeof(SpawnSystem))]
 public class PushRenderCmdsSystem : ComponentSystem
 {
@@ -334,3 +340,4 @@ public class PushRenderCmdsSystem : ComponentSystem
         }
     }
 }
+*/

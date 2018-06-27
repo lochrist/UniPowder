@@ -17,7 +17,7 @@ public static class PowderGame
     public static Color worldBoundariesColor = Color.white;
     public static EntityArchetype powderArchetype;
 
-    public static int brushSize = 2;
+    public static int brushSize = 0;
     public static int currentPowder = PowderTypes.Sand;
     public static Camera mainCamera;
 
@@ -51,6 +51,7 @@ public static class PowderGame
     public static void SetupWorld(EntityManager mgr)
     {
         // Put a solid ground:
+        /*
         for (var x = 0; x < width; ++x)
         {
             for (var y = 0; y < 5; ++y)
@@ -58,6 +59,20 @@ public static class PowderGame
                 Spawn(mgr, x, y, PowderTypes.Stone);
             }
         }
+        */
+
+        /*
+        for (var x = 0; x < 10; x+=2)
+        {
+            for (var y = 0; y < 10; y+=2)
+            {
+                Spawn(mgr, x, y, PowderTypes.Stone);
+            }
+        }
+        */
+
+        Spawn(mgr, 0, 0, PowderTypes.Stone);
+        Spawn(mgr, 0, 1, PowderTypes.Sand);
     }
 
     public static int CoordKey(Vector2Int coord)
@@ -85,6 +100,16 @@ public static class PowderGame
         SetupWorld(mgr);
     }
 
+    public static void PrintInfo()
+    {
+        Debug.Log("Camera rect: " + mainCamera.rect);
+        Debug.Log("pixelRect: " + mainCamera.pixelRect);
+        Debug.Log("pixelHeight: " + mainCamera.pixelHeight);
+        Debug.Log("pixelWidth: " + mainCamera.pixelWidth);
+        Debug.Log("scaledPixelWidth: " + mainCamera.scaledPixelWidth);
+        Debug.Log("scaledPixelHeight: " + mainCamera.scaledPixelHeight);
+    }
+
     public static Vector2Int ToWorldCoord(Vector3 pos)
     {
         return new Vector2Int((int)(pos.x - worldRect.x), (int)(pos.y - worldRect.y));
@@ -99,7 +124,7 @@ public static class PowderGame
         mgr.SetComponentData(e, PowderTypes.values[type].creator(new Vector2Int(x, y)));
         mgr.SetComponentData(e, new Position2D { Value = new float2(x, y) });
         mgr.SetComponentData(e, new Heading2D { Value = new float2(0.0f, 1.0f) });
-        // mgr.AddSharedComponentData(e, PowderTypes.values[type].renderer);
+        mgr.AddSharedComponentData(e, PowderTypes.values[type].renderer);
         powderCount++;
         return e;
     }
@@ -110,7 +135,7 @@ public static class PowderGame
         cmdBuffer.SetComponent(PowderTypes.values[type].creator(new Vector2Int(x, y)));
         cmdBuffer.SetComponent(new Position2D { Value = new float2(x, y) });
         cmdBuffer.SetComponent(new Heading2D { Value = new float2(0.0f, 1.0f) });
-        // cmdBuffer.AddSharedComponent(PowderTypes.values[type].renderer);
+        cmdBuffer.AddSharedComponent(PowderTypes.values[type].renderer);
         powderCount++;
     }
 

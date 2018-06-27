@@ -132,6 +132,7 @@ static class PowderTypes
             throw new Exception("Cannot find " + protoName);
         }
         var result = proto.GetComponent<MeshInstanceRendererComponent>().Value;
+        var vertices = result.mesh.vertices;
         UnityEngine.Object.Destroy(proto);
         return result;
     }

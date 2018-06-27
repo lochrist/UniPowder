@@ -168,8 +168,8 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
-  orthographic size: 350
+  orthographic: 1
+  orthographic size: 25
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -246,6 +246,11 @@ Prefab:
       propertyPath: m_SerializedData.material
       value: 
       objectReference: {fileID: 2100000, guid: 17813b4115f7f2245bcb8462812db9a7, type: 2}
+    - target: {fileID: 114847593170771454, guid: 68b1394bbfbe8714fa5f838986ffcbca,
+        type: 2}
+      propertyPath: m_SerializedData.mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: 110f690d581c7064dbae40cc9c170993, type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 68b1394bbfbe8714fa5f838986ffcbca, type: 2}
   m_IsPrefabAsset: 0
@@ -457,7 +462,7 @@ Prefab:
         type: 2}
       propertyPath: m_SerializedData.mesh
       value: 
-      objectReference: {fileID: 4300000, guid: 30bbc12debbf362488d884be54f84c2a, type: 3}
+      objectReference: {fileID: 4300000, guid: 110f690d581c7064dbae40cc9c170993, type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 68b1394bbfbe8714fa5f838986ffcbca, type: 2}
   m_IsPrefabAsset: 0

@@ -45,6 +45,11 @@ public class PowderRenderer : MonoBehaviour
         {
             PowderGame.Reset();
         }
+
+        if (GUILayout.Button("Print Info"))
+        {
+            PowderGame.PrintInfo();
+        }
         GUILayout.EndHorizontal();
 
         if (Event.current.type == EventType.Repaint)
