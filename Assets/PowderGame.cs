@@ -25,6 +25,9 @@ public static class PowderGame
     public static Rect unitWorldRect;
     public static Vector3 unitWorldPos = new Vector3(350, 230, 0);
 
+    public static float xUnitPerCoord;
+    public static float yUnitPerCoord;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     public static void Initialize()
     {
@@ -57,16 +60,35 @@ public static class PowderGame
         unitWorldRect = new Rect(
             new Vector2(unitWorldPos.x, unitWorldPos.z), 
             new Vector2(topRightCornerWorld.x - unitWorldPos.x, topRightCornerWorld.z - unitWorldPos.z));
+        xUnitPerCoord = unitWorldRect.width / width;
+        yUnitPerCoord = unitWorldRect.height / height;
+
 
         SetupWorld(mgr);
     }
 
     public static void SetupWorld(EntityManager mgr)
     {
-        // Put a solid ground:
+        PerfWorld(mgr);
+        // DefaultWorld(mgr);
+    }
+
+    public static void DefaultWorld(EntityManager mgr)
+    {
         for (var x = 0; x < width; ++x)
         {
             for (var y = 0; y < 5; ++y)
+            {
+                Spawn(mgr, x, y, PowderTypes.Stone);
+            }
+        }
+    }
+
+    public static void PerfWorld(EntityManager mgr)
+    {
+        for (var x = 0; x < width; ++x)
+        {
+            for (var y = 0; y < height / 2; ++y)
             {
                 Spawn(mgr, x, y, PowderTypes.Stone);
             }
@@ -135,9 +157,9 @@ public static class PowderGame
 
     public static float2 CoordToWorld(int x, int y)
     {
-        var screenPos = new Vector3(x + pixelWorldRect.x, y + pixelWorldRect.y, 0);
-        var unitPos = mainCamera.ScreenToWorldPoint(screenPos);
-        return new float2(unitPos.x, unitPos.z);
+        // var screenPos = new Vector3(x + pixelWorldRect.x, y + pixelWorldRect.y, 0);
+        // var unitPos = mainCamera.ScreenToWorldPoint(screenPos);
+        return new float2(unitWorldRect.x + (xUnitPerCoord * x), unitWorldRect.y + (yUnitPerCoord * y));
     }
 
     public static Entity Spawn(EntityManager mgr, int x, int y, int type)

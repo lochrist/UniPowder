@@ -1,9 +1,13 @@
 ﻿using System;
 using System.CodeDom;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Transforms;
 using Unity.Transforms2D;
+using UnityEditor;
 using UnityEngine;
 using Random = System.Random;
 
@@ -30,7 +34,7 @@ public struct NeighborsHelper
     public int topLeft;
 }
 */
-public class SimulationSystem : ComponentSystem
+public class SimulationSystem : JobComponentSystem // ComponentSystem // JobComponentSystem
 {
     struct Group
     {
@@ -42,7 +46,8 @@ public class SimulationSystem : ComponentSystem
     [Inject] Group m_PowderGroup;
 
     NativeHashMap<int, int> m_PositionsMap;
-
+    bool m_PositionsMapAllocated;
+    /*
     protected override void OnUpdate()
     {
         m_PositionsMap = new NativeHashMap<int, int>(m_PowderGroup.Length, Allocator.Temp);
@@ -60,12 +65,89 @@ public class SimulationSystem : ComponentSystem
 
         m_PositionsMap.Dispose();
     }
+    */
 
-    private Powder Simulate(Powder p, int index)
+    // [BurstCompile]
+    struct HashCoordJob : IJobParallelFor
+    {
+        [ReadOnly] public ComponentDataArray<Powder> powders;
+        public NativeHashMap<int, int>.Concurrent hashMap;
+
+        public void Execute(int index)
+        {
+            var key = PowderGame.CoordKey(powders[index].coord);
+            hashMap.TryAdd(key, index);
+        }
+    }
+
+    // [BurstCompile]
+    struct SimulateJob : IJobParallelFor
+    {
+        public ComponentDataArray<Powder> powders;
+        public ComponentDataArray<Position2D> positions;
+        [ReadOnly] public int seed;
+        [ReadOnly] public NativeHashMap<int, int> hashMap;
+
+        public void Execute(int index)
+        {
+            powders[index] = Simulate(ref hashMap, powders[index], seed, index);
+            positions[index] = new Position2D() { Value = PowderGame.CoordToWorld(powders[index].coord) };
+        }
+    }
+
+    protected override JobHandle OnUpdate(JobHandle inputDeps)
+    {
+        if (m_PositionsMapAllocated)
+        {
+            m_PositionsMap.Dispose();
+            m_PositionsMapAllocated = false;
+        }
+
+        // Compute index
+        m_PositionsMap = new NativeHashMap<int, int>(m_PowderGroup.Length, Allocator.Temp);
+        m_PositionsMapAllocated = true;
+
+        var computeHashJob = new HashCoordJob()
+        {
+            powders = m_PowderGroup.powders,
+            hashMap = m_PositionsMap
+        };
+        var hashJobHandle = computeHashJob.Schedule(m_PowderGroup.Length, 64, inputDeps);
+
+        // Simulate 
+        var simulateJob = new SimulateJob()
+        {
+            powders = m_PowderGroup.powders,
+            positions = m_PowderGroup.positions,
+            hashMap = m_PositionsMap,
+            seed = (int)(UnityEngine.Random.value * int.MaxValue)
+        };
+
+        var simulateJobHandle = simulateJob.Schedule(m_PowderGroup.Length, 64, hashJobHandle);
+        inputDeps = simulateJobHandle;
+
+        return inputDeps;
+    }
+
+    protected override void OnStopRunning()
+    {
+        if (m_PositionsMapAllocated)
+        {
+            m_PositionsMap.Dispose();
+            m_PositionsMapAllocated = false;
+        }
+    }
+
+    private static bool Chance(int chance, int seed, int addon)
+    {
+        return ((seed + addon) % chance) == 0;
+    }
+
+    private static Powder Simulate(ref NativeHashMap<int, int> hashMap, Powder p, int seed, int index)
     {
         if (p.life == 0 || p.coord.x < 0 || p.coord.x > PowderGame.width || p.coord.y < 0 || p.coord.y > PowderGame.height)
         {
-            RemovePowder(index);
+            // RemovePowder(index);
             return p;
         }
 
@@ -77,36 +159,36 @@ public class SimulationSystem : ComponentSystem
         switch (PowderTypes.values[p.type].state)
         {
             case PowderState.Gas:
-                var aboveIndex = GetPowderIndex(p.coord.x, p.coord.y + 1);
+                var aboveIndex = GetPowderIndex(ref hashMap, p.coord.x, p.coord.y + 1);
                 if (aboveIndex == -1)
                 {
                     p.coord.y++;
                 }
-                else if (GetPowderIndex(p.coord.x - 1, p.coord.y) == -1 && PowderGame.Chance(1f/3))
+                else if (GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y) == -1 && Chance(3, seed, index))
                 {
                     p.coord.x--;
                 }
-                else if (GetPowderIndex(p.coord.x + 1, p.coord.y) == -1 && PowderGame.Chance(1f / 3))
+                else if (GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y) == -1 && Chance(3, seed, index))
                 {
                     p.coord.x++;
                 }
                 break;
             case PowderState.Liquid:
                 {
-                    if (GetPowderIndex(p.coord.x, p.coord.y - 1) == -1)
+                    if (GetPowderIndex(ref hashMap, p.coord.x, p.coord.y - 1) == -1)
                     {
                         // Nothing below, fall
                         p.coord.y--;
                     }
                     else
                     {
-                        var lowerLeftEmpty = GetPowderIndex(p.coord.x - 1, p.coord.y - 1) == -1;
-                        var lowerRightEmpty = GetPowderIndex(p.coord.x + 1, p.coord.y - 1) == -1;
-                        var leftEmpty = GetPowderIndex(p.coord.x - 1, p.coord.y) == -1;
-                        var rightEmpty = GetPowderIndex(p.coord.x + 1, p.coord.y) == -1;
+                        var lowerLeftEmpty = GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y - 1) == -1;
+                        var lowerRightEmpty = GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y - 1) == -1;
+                        var leftEmpty = GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y) == -1;
+                        var rightEmpty = GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y) == -1;
                         if (lowerLeftEmpty)
                         {
-                            if (lowerRightEmpty && PowderGame.Chance(0.5f))
+                            if (lowerRightEmpty && Chance(2, seed, index))
                             {
                                 p.coord.x++;
                                 p.coord.y--;
@@ -122,11 +204,11 @@ public class SimulationSystem : ComponentSystem
                             p.coord.x++;
                             p.coord.y--;
                         }
-                        else if (leftEmpty && PowderGame.Chance(0.5f))
+                        else if (leftEmpty && Chance(2, seed, index))
                         {
                             p.coord.x--;
                         }
-                        else if (rightEmpty && PowderGame.Chance(0.5f))
+                        else if (rightEmpty && Chance(2, seed, index))
                         {
                             p.coord.x++;
                         }
@@ -137,20 +219,20 @@ public class SimulationSystem : ComponentSystem
                 break;
             case PowderState.Powder:
                 {
-                    var belowIndex = GetPowderIndex(p.coord.x, p.coord.y - 1);
+                    var belowIndex = GetPowderIndex(ref hashMap, p.coord.x, p.coord.y - 1);
                     if (belowIndex == -1)
                     {
                         p.coord.y--;
                     }
-                    else if (GetPowderIndex(p.coord.x - 1, p.coord.y) == -1 &&
-                                GetPowderIndex(p.coord.x - 1, p.coord.y - 1) == -1 &&
-                                UnityEngine.Random.Range(0, 3) == 0)
+                    else if (GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y) == -1 &&
+                                GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y - 1) == -1 &&
+                                Chance(3, seed, index))
                     {
                         p.coord.x--;
                     }
-                    else if (GetPowderIndex(p.coord.x + 1, p.coord.y) == -1 &&
-                        GetPowderIndex(p.coord.x + 1, p.coord.y - 1) == -1 &&
-                        UnityEngine.Random.Range(0, 3) == 0)
+                    else if (GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y) == -1 &&
+                        GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y - 1) == -1 &&
+                        Chance(3, seed, index))
                     {
                         p.coord.x++;
                     }
@@ -161,47 +243,45 @@ public class SimulationSystem : ComponentSystem
         switch (p.type)
         {
             case PowderTypes.Sand:
-                Sand(ref p, index);
+                Sand(ref p, seed, index);
                 break;
             case PowderTypes.Acid:
-                Acid(ref p, index);
+                Acid(ref p, seed, index);
                 break;
             case PowderTypes.Fire:
-                Fire(ref p, index);
+                Fire(ref p, seed, index);
                 break;
             case PowderTypes.Glass:
-                Glass(ref p, index);
+                Glass(ref p, seed, index);
                 break;
             case PowderTypes.Smoke:
-                Smoke(ref p, index);
+                Smoke(ref p, seed, index);
                 break;
             case PowderTypes.Steam:
-                Steam(ref p, index);
+                Steam(ref p, seed, index);
                 break;
             case PowderTypes.Stone:
-                Stone(ref p, index);
+                Stone(ref p, seed, index);
                 break;
             case PowderTypes.Water:
-                Water(ref p, index);
+                Water(ref p, seed, index);
                 break;
             case PowderTypes.Wood:
-                Wood(ref p, index);
+                Wood(ref p, seed, index);
                 break;
         }
-
-
         return p;
     }
 
-    int GetPowderIndex(Vector2Int coord)
+    static int GetPowderIndex(ref NativeHashMap<int, int> hashMap, Vector2Int coord)
     {
-        return GetPowderIndex(coord.x, coord.y);
+        return GetPowderIndex(ref hashMap, coord.x, coord.y);
     }
 
-    int GetPowderIndex(int x, int y)
+    static int GetPowderIndex(ref NativeHashMap<int, int> hashMap, int x, int y)
     {
         int index;
-        if (m_PositionsMap.TryGetValue(PowderGame.CoordKey(x, y), out index))
+        if (hashMap.TryGetValue(PowderGame.CoordKey(x, y), out index))
         {
             return index;
         }
@@ -211,51 +291,52 @@ public class SimulationSystem : ComponentSystem
 
     void RemovePowder(int index)
     {
-        PostUpdateCommands.DestroyEntity(m_PowderGroup.entities[index]);
+        // PostUpdateCommands.DestroyEntity(m_PowderGroup.entities[index]);
+
         PowderGame.powderCount--;
     }
 
-    void Sand(ref Powder p, int index)
+    static void Sand(ref Powder p, int seed, int index)
     {
 
     }
 
-    void Wood(ref Powder p, int index)
+    static void Wood(ref Powder p, int seed, int index)
     {
 
     }
 
-    void Glass(ref Powder p, int index)
+    static void Glass(ref Powder p, int seed, int index)
     {
 
     }
 
-    void Acid(ref Powder p, int index)
+    static void Acid(ref Powder p, int seed, int index)
     {
 
     }
 
-    void Water(ref Powder p, int index)
+    static void Water(ref Powder p, int seed, int index)
     {
 
     }
 
-    void Fire(ref Powder p, int index)
+    static void Fire(ref Powder p, int seed, int index)
     {
 
     }
 
-    void Steam(ref Powder p, int index)
+    static void Steam(ref Powder p, int seed, int index)
     {
 
     }
 
-    void Stone(ref Powder p, int index)
+    static void Stone(ref Powder p, int seed, int index)
     {
 
     }
 
-    void Smoke(ref Powder p, int index)
+    static void Smoke(ref Powder p, int seed, int index)
     {
 
     }
@@ -271,7 +352,8 @@ public class SpawnSystem : ComponentSystem
         public int Length;
     }
 
-    [Inject] Group m_PowderGroup;
+    ComponentDataArray<Powder> m_Powders;
+    ComponentGroup m_PowderGroup;
 
     protected override void OnUpdate()
     {
@@ -286,9 +368,15 @@ public class SpawnSystem : ComponentSystem
         }
         else if ((Input.GetMouseButtonDown(0) || Input.GetMouseButton(0)) && PowderGame.IsInWorld(Input.mousePosition))
         {
+            m_Powders = m_PowderGroup.GetComponentDataArray<Powder>();
             var coord = PowderGame.ScreenToCoord(Input.mousePosition);
             Spawn(coord, PowderGame.currentPowder);
         }
+    }
+
+    protected override void OnCreateManager(int capacity)
+    {
+        m_PowderGroup = GetComponentGroup(ComponentType.ReadOnly(typeof(Powder)));
     }
 
     private void Spawn(Vector2Int coord, int type)
@@ -307,9 +395,9 @@ public class SpawnSystem : ComponentSystem
 
     private bool CellOccupied(int x, int y)
     {
-        for (var i = 0; i < m_PowderGroup.Length; ++i)
+        for (var i = 0; i < m_Powders.Length; ++i)
         {
-            if (m_PowderGroup.powders[i].coord.x == x && m_PowderGroup.powders[i].coord.y == y)
+            if (m_Powders[i].coord.x == x && m_Powders[i].coord.y == y)
             {
                 return true;
             }
