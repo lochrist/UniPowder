@@ -4,13 +4,31 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms2D;
 using UnityEngine;
+using Random = System.Random;
 
 public class RenderCmd
 {
     public int type;
     public Vector2Int coord;
 }
+/*
+public struct NeighborsHelper
+{
+    public NeighborsHelper()
+    {
 
+    }
+
+    public int left;
+    public int right;
+    public int top;
+    public int bottom;
+    public int bottomLeft;
+    public int bottomRight;
+    public int topRight;
+    public int topLeft;
+}
+*/
 public class SimulationSystem : ComponentSystem
 {
     struct Group
@@ -61,13 +79,54 @@ public class SimulationSystem : ComponentSystem
                 {
                     p.coord.y++;
                 }
+                else if (GetPowderIndex(p.coord.x - 1, p.coord.y) == -1 && PowderGame.Chance(1f/3))
+                {
+                    p.coord.x--;
+                }
+                else if (GetPowderIndex(p.coord.x + 1, p.coord.y) == -1 && PowderGame.Chance(1f / 3))
+                {
+                    p.coord.x++;
+                }
                 break;
             case PowderState.Liquid:
                 {
-                    var belowIndex = GetPowderIndex(p.coord.x, p.coord.y - 1);
-                    if (belowIndex == -1)
+                    if (GetPowderIndex(p.coord.x, p.coord.y - 1) == -1)
                     {
+                        // Nothing below, fall
                         p.coord.y--;
+                    }
+                    else
+                    {
+                        var lowerLeftEmpty = GetPowderIndex(p.coord.x - 1, p.coord.y - 1) == -1;
+                        var lowerRightEmpty = GetPowderIndex(p.coord.x + 1, p.coord.y - 1) == -1;
+                        var leftEmpty = GetPowderIndex(p.coord.x - 1, p.coord.y -1) == -1;
+                        var rightEmpty = GetPowderIndex(p.coord.x + 1, p.coord.y - 1) == -1;
+                        if (lowerLeftEmpty)
+                        {
+                            if (lowerRightEmpty && PowderGame.Chance(0.5f))
+                            {
+                                p.coord.x++;
+                                p.coord.y--;
+                            }
+                            else
+                            {
+                                p.coord.x--;
+                                p.coord.y--;
+                            }
+                        }
+                        else if (lowerRightEmpty)
+                        {
+                            p.coord.x++;
+                            p.coord.y--;
+                        }
+                        else if (leftEmpty && PowderGame.Chance(0.5f))
+                        {
+                            p.coord.x--;
+                        }
+                        else if (rightEmpty && PowderGame.Chance(0.5f))
+                        {
+                            p.coord.x++;
+                        }
                     }
                     break;
                 }
@@ -79,6 +138,18 @@ public class SimulationSystem : ComponentSystem
                     if (belowIndex == -1)
                     {
                         p.coord.y--;
+                    }
+                    else if (GetPowderIndex(p.coord.x - 1, p.coord.y) == -1 &&
+                                GetPowderIndex(p.coord.x - 1, p.coord.y - 1) == -1 &&
+                                UnityEngine.Random.Range(0, 3) == 0)
+                    {
+                        p.coord.x--;
+                    }
+                    else if (GetPowderIndex(p.coord.x + 1, p.coord.y) == -1 &&
+                        GetPowderIndex(p.coord.x + 1, p.coord.y - 1) == -1 &&
+                        UnityEngine.Random.Range(0, 3) == 0)
+                    {
+                        p.coord.x++;
                     }
                     break;
                 }

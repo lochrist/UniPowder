@@ -45,6 +45,11 @@ public static class PowderGame
         }
         mainCamera =  proto.GetComponent<Camera>();
 
+        SetupWorld(mgr);
+    }
+
+    public static void SetupWorld(EntityManager mgr)
+    {
         // Put a solid ground:
         for (var x = 0; x < width; ++x)
         {
@@ -68,6 +73,16 @@ public static class PowderGame
     public static bool IsInWorld(Vector2 pos)
     {
         return worldRect.Contains(pos);
+    }
+
+    public static void Reset()
+    {
+        var mgr = World.Active.GetOrCreateManager<EntityManager>();
+        var allEntities = mgr.GetAllEntities();
+        powderCount = 0;
+        mgr.DestroyEntity(allEntities);
+        allEntities.Dispose();
+        SetupWorld(mgr);
     }
 
     public static Vector2Int ToWorldCoord(Vector3 pos)
@@ -97,5 +112,10 @@ public static class PowderGame
         cmdBuffer.SetComponent(new Heading2D { Value = new float2(0.0f, 1.0f) });
         // cmdBuffer.AddSharedComponent(PowderTypes.values[type].renderer);
         powderCount++;
+    }
+
+    public static bool Chance(float prob)
+    {
+        return UnityEngine.Random.Range(0f, 1.0f) <= prob;
     }
 }
