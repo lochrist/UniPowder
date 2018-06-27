@@ -8,8 +8,6 @@ public class PowderRenderer : MonoBehaviour
     public TextAsset fontConfig;
     public BitmapFont bitmapFont;
     public Rect parentRect;
-    public static List<RenderCmd> cmds = new List<RenderCmd>();
-    public static int nbCmds;
 
     float m_DeltaTime = 0.0f;
     float m_UIOffset = 30;
@@ -65,32 +63,9 @@ public class PowderRenderer : MonoBehaviour
         }
         GUILayout.EndHorizontal();
 
-        if (Event.current.type == EventType.Repaint)
-        {
-            Drawing2D.DrawRect(PowderGame.pixelWorldRect, PowderGame.worldBoundariesColor, 2);
-
-            for (var i = 0; i < nbCmds; ++i)
-            {
-                var cmd = cmds[i];
-                Drawing2D.DrawPoint(new Vector2(cmd.coord.x + PowderGame.pixelWorldRect.x, Screen.height - PowderGame.pixelWorldRect.y - cmd.coord.y), 
-                    PowderTypes.values[cmd.type].color,
-                    2f);
-            }
-        }
-
         GUILayout.Space(PowderGame.pixelWorldRect.height + m_UIOffset);
         GUILayout.BeginHorizontal();
         GUILayout.Space(PowderGame.pixelWorldRect.x);
-        // Powder buttons to support:
-        // sand
-        // water
-        // fire
-        // stone
-        // wood
-        // smoke
-        // steam
-        // Acid
-        // Glass
         if (GUILayout.Button("Sand"))
         {
             PowderGame.currentPowder = PowderTypes.Sand;

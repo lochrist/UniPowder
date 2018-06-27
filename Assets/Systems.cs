@@ -4,12 +4,6 @@ using Unity.Jobs;
 using Unity.Transforms2D;
 using UnityEngine;
 
-public class RenderCmd
-{
-    public int type;
-    public Vector2Int coord;
-}
-
 public class PowderSystemUtils
 {
     public static bool Chance(int chance, int seed, int addon)
