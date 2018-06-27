@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -62,7 +63,7 @@ public class SimulationSystem : ComponentSystem
     {
         if (p.life == 0 || p.coord.x < 0 || p.coord.x > PowderGame.width || p.coord.y < 0 || p.coord.y > PowderGame.height)
         {
-            // RemovePowder(index);
+            RemovePowder(index);
             return p;
         }
 
@@ -281,18 +282,9 @@ public class SpawnSystem : ComponentSystem
                 " World: " + PowderGame.CoordToWorld(coord)
             );
         }
-        else if (Input.GetMouseButtonDown(0) /* || Input.GetMouseButton(0) */ /* && PowderGame.IsInWorld(Input.mousePosition)*/)
+        else if ((Input.GetMouseButtonDown(0) || Input.GetMouseButton(0)) && PowderGame.IsInWorld(Input.mousePosition))
         {
             var coord = PowderGame.ScreenToCoord(Input.mousePosition);
-            for (var i = 0; i < m_PowderGroup.Length; ++i)
-            {
-                if (m_PowderGroup.powders[i].coord == coord)
-                {
-                    return;
-                }
-            }
-
-            Debug.Log("Spawning at: " + coord);
             Spawn(coord, PowderGame.currentPowder);
         }
     }
@@ -304,10 +296,24 @@ public class SpawnSystem : ComponentSystem
         {
             for (var x = coord.x - size; x <= coord.x + size; ++x)
             {
-                PowderGame.Spawn(PostUpdateCommands, x, y, type);
+                if (!CellOccupied(x, y))
+                    PowderGame.Spawn(PostUpdateCommands, x, y, type);
             }
-            size++;
+            size += y < coord.y ? 1 : -1;
         }
+    }
+
+    private bool CellOccupied(int x, int y)
+    {
+        for (var i = 0; i < m_PowderGroup.Length; ++i)
+        {
+            if (m_PowderGroup.powders[i].coord.x == x && m_PowderGroup.powders[i].coord.y == y)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 /*

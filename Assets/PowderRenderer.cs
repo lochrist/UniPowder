@@ -42,6 +42,17 @@ public class PowderRenderer : MonoBehaviour
         GUILayout.Label($"{msec:0.0} ms ({fps:0.} fps)");
         GUILayout.Label(PowderTypes.values[PowderGame.currentPowder].name);
         GUILayout.Space(30);
+
+        if (GUILayout.Button("-") && PowderGame.brushSize > 0)
+        {
+            PowderGame.brushSize--;
+        }
+        GUILayout.Label("Brush: " + (PowderGame.brushSize + 1));
+        if (GUILayout.Button("+") && PowderGame.brushSize < 6)
+        {
+            PowderGame.brushSize++;
+        }
+
         GUILayout.FlexibleSpace();
         if (GUILayout.Button("Reset"))
         {
