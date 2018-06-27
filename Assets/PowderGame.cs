@@ -17,7 +17,7 @@ public static class PowderGame
     public static Color worldBoundariesColor = Color.white;
     public static EntityArchetype powderArchetype;
 
-    public static int brushSize = 0;
+    public static int brushSize = 1;
     public static int currentPowder = PowderTypes.Sand;
     public static Camera mainCamera;
 
@@ -64,39 +64,12 @@ public static class PowderGame
     public static void SetupWorld(EntityManager mgr)
     {
         // Put a solid ground:
-        /*
         for (var x = 0; x < width; ++x)
         {
             for (var y = 0; y < 5; ++y)
             {
                 Spawn(mgr, x, y, PowderTypes.Stone);
             }
-        }
-        */
-
-        /*
-        for (var x = 0; x < 10; x+=2)
-        {
-            for (var y = 0; y < 10; y+=2)
-            {
-                Spawn(mgr, x, y, PowderTypes.Stone);
-            }
-        }
-        */
-
-        /*
-        Spawn(mgr, 0, 0, PowderTypes.Stone);
-        Spawn(mgr, 0, 1, PowderTypes.Sand);
-        */
-
-        for (var y = 0; y < height; y++)
-        {
-            Spawn(mgr, 25, y, PowderTypes.Stone);
-        }
-
-        for (var x = 0; x < width; x++)
-        {
-            Spawn(mgr, x, 25, PowderTypes.Sand);
         }
     }
 
@@ -145,7 +118,6 @@ public static class PowderGame
         var worldWidth = topRightCornerWorld.x - bottomLeftCornerWorld.x;
         var worldHeight = topRightCornerWorld.z - bottomLeftCornerWorld.z;
         sb.AppendLine("WorldSize: " + worldWidth + ", " + worldHeight);
-
         sb.AppendLine("AspectRatio: " + mainCamera.aspect + " OrthoSize: " + mainCamera.orthographicSize);
 
         Debug.Log(sb.ToString());
@@ -170,6 +142,7 @@ public static class PowderGame
 
     public static Entity Spawn(EntityManager mgr, int x, int y, int type)
     {
+        // Debug.Log("Spawn: " + x + ", " + y);
         var e = mgr.CreateEntity(powderArchetype);
         mgr.SetComponentData(e, PowderTypes.values[type].creator(new Vector2Int(x, y)));
         mgr.SetComponentData(e, new Position2D { Value = CoordToWorld(x, y) });
@@ -181,6 +154,7 @@ public static class PowderGame
 
     public static void Spawn(EntityCommandBuffer cmdBuffer, int x, int y, int type)
     {
+        // Debug.Log("Spawn: " + x + ", " + y);
         cmdBuffer.CreateEntity(PowderGame.powderArchetype);
         cmdBuffer.SetComponent(PowderTypes.values[type].creator(new Vector2Int(x, y)));
         cmdBuffer.SetComponent(new Position2D { Value = CoordToWorld(x, y) });
