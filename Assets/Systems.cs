@@ -35,6 +35,7 @@ public class SimulationSystem : ComponentSystem
     struct Group
     {
         public ComponentDataArray<Powder> powders;
+        public ComponentDataArray<Position2D> positions;
         [ReadOnly] public EntityArray entities;
         public int Length;
     }
@@ -54,6 +55,7 @@ public class SimulationSystem : ComponentSystem
         for (var i = 0; i < m_PowderGroup.Length; ++i)
         {
             m_PowderGroup.powders[i] = Simulate(m_PowderGroup.powders[i], i);
+            m_PowderGroup.positions[i] = new Position2D() { Value = PowderGame.CoordToWorld(m_PowderGroup.powders[i].coord) };
         }
 
         m_PositionsMap.Dispose();
