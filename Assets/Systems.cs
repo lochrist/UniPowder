@@ -1,5 +1,8 @@
-﻿using Unity.Collections;
+﻿using System;
+using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms2D;
 using UnityEngine;
 
 public class RenderCmd
@@ -198,9 +201,16 @@ public class SpawnSystem : ComponentSystem
 
     protected override void OnUpdate()
     {
-        if ((Input.GetMouseButtonDown(0) || Input.GetMouseButton(0)) && PowderGame.IsInWorld(Input.mousePosition))
+        if (Input.GetMouseButtonDown(0) || Input.GetMouseButton(0) /* && PowderGame.IsInWorld(Input.mousePosition)*/)
         {
             var pos = PowderGame.ToWorldCoord(Input.mousePosition);
+            /*
+            Debug.Log("MousePos: " + Input.mousePosition + 
+                " ScreenToWorld: " + PowderGame.mainCamera.ScreenToWorldPoint(Input.mousePosition) +
+                " viewportToWorldPoint" + PowderGame.mainCamera.ViewportToWorldPoint(Input.mousePosition) + 
+                "Spawn: " + pos
+                    );
+                    */
             for (var i = 0; i < m_PowderGroup.Length; ++i)
             {
                 if (m_PowderGroup.powders[i].coord == pos)
@@ -209,7 +219,7 @@ public class SpawnSystem : ComponentSystem
                 }
             }
 
-            Spawn(pos, PowderGame.currentPowder);
+            Spawn(new Vector2Int((int)pos.x, (int)pos.y), PowderGame.currentPowder);
         }
     }
 
@@ -220,15 +230,10 @@ public class SpawnSystem : ComponentSystem
         {
             for (var x = pos.x - size; x <= pos.x + size; ++x)
             {
-                PostUpdateCommands.CreateEntity(PowderGame.powderArchetype);
-                PostUpdateCommands.SetComponent(PowderTypes.values[type].creator(new Vector2Int(x, y)));
-                ++PowderGame.powderCount;
+                PowderGame.Spawn(PostUpdateCommands, x, y, type);
             }
-
             size++;
         }
-
-        
     }
 }
 

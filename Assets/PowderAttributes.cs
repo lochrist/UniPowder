@@ -1,5 +1,6 @@
 ﻿using System;
 using Unity.Entities;
+using Unity.Rendering;
 using UnityEngine;
 
 enum PowderState
@@ -18,6 +19,7 @@ class PowderType
     public string description;
     public PowderState state;
     public Func<Vector2Int, Powder> creator;
+    public MeshInstanceRenderer renderer;
 }
 
 static class PowderTypes
@@ -45,7 +47,8 @@ static class PowderTypes
             id = Sand,
             state = PowderState.Powder,
             name = "Sand",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Sand }
+            creator = (coord) => new Powder { coord = coord, life = -1, type = Sand },
+            renderer = GetRendererPrototype("Sand")
         };
         values[Wood] = new PowderType
         {
@@ -53,7 +56,8 @@ static class PowderTypes
             id = Wood,
             state = PowderState.Solid,
             name = "Wood",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Wood }
+            creator = (coord) => new Powder { coord = coord, life = -1, type = Wood },
+            // renderer = GetRendererPrototype("Wood")
         };
         values[Fire] = new PowderType
         {
@@ -61,7 +65,8 @@ static class PowderTypes
             id = Fire,
             state = PowderState.Gas,
             name = "Fire",
-            creator = (coord) => new Powder { coord = coord, life = 50, type = Fire }
+            creator = (coord) => new Powder { coord = coord, life = 50, type = Fire },
+            // renderer = GetRendererPrototype("Fire")
         };
         values[Water] = new PowderType
         {
@@ -69,7 +74,8 @@ static class PowderTypes
             id = Water,
             state = PowderState.Liquid,
             name = "Water",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Water }
+            creator = (coord) => new Powder { coord = coord, life = -1, type = Water },
+            // renderer = GetRendererPrototype("Water")
         };
         values[Stone] = new PowderType
         {
@@ -77,7 +83,8 @@ static class PowderTypes
             id = Water,
             state = PowderState.Solid,
             name = "Stone",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Stone }
+            creator = (coord) => new Powder { coord = coord, life = -1, type = Stone },
+            renderer = GetRendererPrototype("Stone")
         };
         values[Smoke] = new PowderType
         {
@@ -85,7 +92,8 @@ static class PowderTypes
             id = Smoke,
             state = PowderState.Gas,
             name = "Smoke",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Smoke }
+            creator = (coord) => new Powder { coord = coord, life = -1, type = Smoke },
+            // renderer = GetRendererPrototype("Smoke")
         };
         values[Steam] = new PowderType
         {
@@ -93,7 +101,8 @@ static class PowderTypes
             id = Steam,
             state = PowderState.Gas,
             name = "Steam",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Steam }
+            creator = (coord) => new Powder { coord = coord, life = -1, type = Steam },
+            // renderer = GetRendererPrototype("Steam")
         };
         values[Acid] = new PowderType
         {
@@ -101,7 +110,8 @@ static class PowderTypes
             id = Acid,
             state = PowderState.Liquid,
             name = "Acid",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Acid }
+            creator = (coord) => new Powder { coord = coord, life = -1, type = Acid },
+            // renderer = GetRendererPrototype("Acid")
         };
         values[Glass] = new PowderType
         {
@@ -109,8 +119,21 @@ static class PowderTypes
             id = Acid,
             state = PowderState.Solid,
             name = "Glass",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Glass }
+            creator = (coord) => new Powder { coord = coord, life = -1, type = Glass },
+            // renderer = GetRendererPrototype("Glass")
         };
+    }
+
+    private static MeshInstanceRenderer GetRendererPrototype(string protoName)
+    {
+        var proto = GameObject.Find(protoName);
+        if (proto == null)
+        {
+            throw new Exception("Cannot find " + protoName);
+        }
+        var result = proto.GetComponent<MeshInstanceRendererComponent>().Value;
+        UnityEngine.Object.Destroy(proto);
+        return result;
     }
 }
 

@@ -31,9 +31,11 @@ public class PowderRenderer : MonoBehaviour
         parentRect = Drawing2D.GetWorldRect(this.transform as RectTransform);
         Drawing2D.SetParentBounds(parentRect);
 
+        GUILayout.Space(PowderGame.worldRect.y - 50);
         GUILayout.BeginHorizontal();
+        GUILayout.Space(PowderGame.worldRect.x);
         GUILayout.Label("Particles: " + PowderGame.powderCount);
-
+        GUILayout.Space(30);
         var msec = deltaTime * 1000.0f;
         var fps = 1.0f / deltaTime;
         GUILayout.Label($"{msec:0.0} ms ({fps:0.} fps)");
