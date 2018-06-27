@@ -1,5 +1,10 @@
-﻿using System.CodeDom;
+﻿using System;
+using System.CodeDom;
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Rendering;
+using Unity.Transforms;
+using Unity.Transforms2D;
 using UnityEngine;
 
 public static class PowderGame
@@ -14,6 +19,9 @@ public static class PowderGame
 
     public static int brushSize = 2;
     public static int currentPowder = PowderTypes.Sand;
+    public static Camera mainCamera;
+
+    public static Vector3 strangeOffset = new Vector3(350, 230, 0);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     public static void Initialize()
@@ -27,11 +35,18 @@ public static class PowderGame
     public static void InitializeWithScene()
     {
         var mgr = World.Active.GetOrCreateManager<EntityManager>();
-        powderArchetype = mgr.CreateArchetype(typeof(Powder));
+        powderArchetype = mgr.CreateArchetype(typeof(Powder), typeof(Position2D), typeof(TransformMatrix), typeof(Heading2D));
         PowderTypes.Init(mgr);
 
+        var proto = GameObject.Find("Main Camera");
+        if (proto == null)
+        {
+            throw new Exception("Cannot find Main Camera");
+        }
+        mainCamera =  proto.GetComponent<Camera>();
+
         // Put a solid ground:
-        for (var x = 0; x < PowderGame.width; ++x)
+        for (var x = 0; x < width; ++x)
         {
             for (var y = 0; y < 5; ++y)
             {
@@ -55,16 +70,32 @@ public static class PowderGame
         return worldRect.Contains(pos);
     }
 
-    public static Vector2Int ToWorldCoord(Vector2 pos)
+    public static Vector2Int ToWorldCoord(Vector3 pos)
     {
         return new Vector2Int((int)(pos.x - worldRect.x), (int)(pos.y - worldRect.y));
+        // var p = PowderGame.mainCamera.ScreenToWorldPoint(pos);
+        // pos -= strangeOffset;
+        // return new Vector2Int((int)pos.x, (int)pos.y);
     }
 
     public static Entity Spawn(EntityManager mgr, int x, int y, int type)
     {
         var e = mgr.CreateEntity(powderArchetype);
         mgr.SetComponentData(e, PowderTypes.values[type].creator(new Vector2Int(x, y)));
+        mgr.SetComponentData(e, new Position2D { Value = new float2(x, y) });
+        mgr.SetComponentData(e, new Heading2D { Value = new float2(0.0f, 1.0f) });
+        // mgr.AddSharedComponentData(e, PowderTypes.values[type].renderer);
         powderCount++;
         return e;
+    }
+
+    public static void Spawn(EntityCommandBuffer cmdBuffer, int x, int y, int type)
+    {
+        cmdBuffer.CreateEntity(PowderGame.powderArchetype);
+        cmdBuffer.SetComponent(PowderTypes.values[type].creator(new Vector2Int(x, y)));
+        cmdBuffer.SetComponent(new Position2D { Value = new float2(x, y) });
+        cmdBuffer.SetComponent(new Heading2D { Value = new float2(0.0f, 1.0f) });
+        // cmdBuffer.AddSharedComponent(PowderTypes.values[type].renderer);
+        powderCount++;
     }
 }
