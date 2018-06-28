@@ -238,6 +238,42 @@ struct SimulateJob : IJobParallelFor
     }
 }
 
+// [BurstCompile]
+struct HashCoordJob : IJobParallelFor
+{
+    [ReadOnly] public ComponentDataArray<Powder> powders;
+    public NativeHashMap<int, int>.Concurrent hashMap;
+
+    public void Execute(int index)
+    {
+        var key = PowderGame.CoordKey(powders[index].coord);
+        hashMap.TryAdd(key, index);
+    }
+}
+
+struct SpawnJob : IJob
+{
+    public NativeHashMap<int, int> hashMap;
+    [ReadOnly] public Vector2Int coord;
+    public int type;
+    public EntityCommandBuffer cmdBuffer;
+    public void Execute()
+    {
+        var size = 0;
+        for (var y = coord.y - PowderGame.brushSize; y <= coord.y + PowderGame.brushSize; ++y)
+        {
+            for (var x = coord.x - size; x <= coord.x + size; ++x)
+            {
+                if (!PowderSystemUtils.IsOccupied(ref hashMap, x, y))
+                {
+                    PowderGame.Spawn(cmdBuffer, x, y, type);
+                }
+            }
+            size += y < coord.y ? 1 : -1;
+        }
+    }
+}
+
 public class SimulationSystem : JobComponentSystem
 {
     struct Group
@@ -253,18 +289,6 @@ public class SimulationSystem : JobComponentSystem
     static NativeHashMap<int, int> positionsMap;
     bool m_PositionsMapAllocated;
 
-    // [BurstCompile]
-    struct HashCoordJob : IJobParallelFor
-    {
-        [ReadOnly] public ComponentDataArray<Powder> powders;
-        public NativeHashMap<int, int>.Concurrent hashMap;
-
-        public void Execute(int index)
-        {
-            var key = PowderGame.CoordKey(powders[index].coord);
-            hashMap.TryAdd(key, index);
-        }
-    }
 
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
@@ -283,7 +307,20 @@ public class SimulationSystem : JobComponentSystem
             powders = m_PowderGroup.powders,
             hashMap = positionsMap
         };
-        var hashJobHandle = computeHashJob.Schedule(m_PowderGroup.Length, 64, inputDeps);
+        var previousJobHandle = computeHashJob.Schedule(m_PowderGroup.Length, 64, inputDeps);
+
+        if ((Input.GetMouseButtonDown(0) || Input.GetMouseButton(0)) && PowderGame.IsInWorld(Input.mousePosition))
+        {
+            var coord = PowderGame.ScreenToCoord(Input.mousePosition);
+            var spawnJob = new SpawnJob()
+            {
+                hashMap = positionsMap,
+                coord = coord,
+                cmdBuffer = m_Barrier.CreateCommandBuffer(),
+                type = PowderGame.currentPowder
+            };
+            previousJobHandle = spawnJob.Schedule(previousJobHandle);
+        }
 
         // Simulate 
         var simulateJob = new SimulateJob()
@@ -296,7 +333,7 @@ public class SimulationSystem : JobComponentSystem
             cmdBuffer = m_Barrier.CreateCommandBuffer()
         };
 
-        var simulateJobHandle = simulateJob.Schedule(m_PowderGroup.Length, 64, hashJobHandle);
+        var simulateJobHandle = simulateJob.Schedule(m_PowderGroup.Length, 64, previousJobHandle);
         inputDeps = simulateJobHandle;
 
         return inputDeps;
@@ -308,43 +345,6 @@ public class SimulationSystem : JobComponentSystem
         {
             positionsMap.Dispose();
             m_PositionsMapAllocated = false;
-        }
-    }
-}
-
-[AlwaysUpdateSystem]
-[UpdateAfter(typeof(SimulationSystem))]
-public class SpawnSystem : ComponentSystem
-{
-    protected override void OnUpdate()
-    {
-        if (Input.GetMouseButtonDown(1))
-        {
-            var coord = PowderGame.ScreenToCoord(Input.mousePosition);
-            Debug.Log("MousePos: " + Input.mousePosition +
-                " ScreenToWorld: " + PowderGame.mainCamera.ScreenToWorldPoint(Input.mousePosition) +
-                " Coord: " + coord + 
-                " World: " + PowderGame.CoordToWorld(coord)
-            );
-        }
-        else if ((Input.GetMouseButtonDown(0) || Input.GetMouseButton(0)) && PowderGame.IsInWorld(Input.mousePosition))
-        {
-            var coord = PowderGame.ScreenToCoord(Input.mousePosition);
-            Spawn(coord, PowderGame.currentPowder);
-        }
-    }
-
-    private void Spawn(Vector2Int coord, int type)
-    {
-        var size = 0;
-        for (var y = coord.y - PowderGame.brushSize; y <= coord.y + PowderGame.brushSize; ++y)
-        {
-            for (var x = coord.x - size; x <= coord.x + size; ++x)
-            {
-                // if (!PowderSystemUtils.IsOccupied(x, y))
-                PowderGame.Spawn(PostUpdateCommands, x, y, type);
-            }
-            size += y < coord.y ? 1 : -1;
         }
     }
 }
