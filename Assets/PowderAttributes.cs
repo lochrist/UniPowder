@@ -3,7 +3,7 @@ using Unity.Entities;
 using Unity.Rendering;
 using UnityEngine;
 
-enum PowderState
+public enum PowderState
 {
     Solid,
     Liquid,
@@ -11,7 +11,7 @@ enum PowderState
     Powder
 }
 
-class PowderType
+public class PowderType
 {
     public Color color;
     public int id;
@@ -22,7 +22,7 @@ class PowderType
     public MeshInstanceRenderer renderer;
 }
 
-static class PowderTypes
+public static class PowderTypes
 {
     public const int Void = 0;
     public const int Sand = 1;

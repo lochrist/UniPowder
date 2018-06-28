@@ -36,10 +36,9 @@ public class PowderSystemUtils
         return GetPowderIndex(ref hashMap, x, y) == -1;
     }
 
-    public static void RemovePowder(ref EntityCommandBuffer.Concurrent cmdBuffer, ref EntityArray entities, int index)
+    public static void SchdeduleRemovePowder(ref NativeHashMap<int, int>.Concurrent toRemove, int index)
     {
-        cmdBuffer.DestroyEntity(entities[index]);
-        PowderGame.powderCount--;
+        toRemove.TryAdd(index, index);
     }
 
     public static void ChangeElement(ref Powder p, int newElementType)
@@ -237,24 +236,29 @@ struct SpawnJob : IJob
 // [BurstCompile]
 struct SimulateJob : IJobParallelFor
 {
-    public ComponentDataArray<Powder> powders;
+    [ReadOnly] public ComponentDataArray<Powder> powders;
     public ComponentDataArray<Position2D> positions;
     public EntityCommandBuffer.Concurrent cmdBuffer;
     [ReadOnly] public EntityArray entities;
     [ReadOnly] public Rand rand;
     [ReadOnly] public NativeHashMap<int, int> hashMap;
+    public NativeHashMap<int, int>.Concurrent toDeleteEntities;
 
     public void Execute(int index)
     {
-        powders[index] = Simulate(powders[index], index);
-        positions[index] = new Position2D() { Value = PowderGame.CoordToWorld(powders[index].coord) };
+        var updatedPowder = Simulate(powders[index], index);
+        if (!powders[index].Same(updatedPowder))
+        {
+            cmdBuffer.SetComponent(entities[index], updatedPowder);
+            positions[index] = new Position2D() { Value = PowderGame.CoordToWorld(powders[index].coord) };
+        }
     }
 
     Powder Simulate(Powder p, int index)
     {
         if (p.life == 0 || p.coord.x < 0 || p.coord.x > PowderGame.width || p.coord.y < 0 || p.coord.y > PowderGame.height)
         {
-            PowderSystemUtils.RemovePowder(ref cmdBuffer, ref entities, index);
+            PowderSystemUtils.SchdeduleRemovePowder(ref toDeleteEntities, index);
             return p;
         }
 
@@ -396,7 +400,25 @@ struct SimulateJob : IJobParallelFor
 
     void Acid(ref Powder p, ref Neighbors n)
     {
+        if (!n.LeftEmpty())
+            AcidTouch(n.Left());
+        if (!n.RightEmpty())
+            AcidTouch(n.Right());
+        if (!n.BottomEmpty())
+            AcidTouch(n.Bottom());
+    }
 
+    void AcidTouch(int index)
+    {
+        if (powders[index].type != PowderTypes.Acid &&
+            powders[index].type != PowderTypes.Fire &&
+            powders[index].type != PowderTypes.Water &&
+            powders[index].type != PowderTypes.Glass &&
+            powders[index].type != PowderTypes.Lava
+        )
+        {
+            PowderSystemUtils.SchdeduleRemovePowder(ref toDeleteEntities, index);
+        }
     }
 
     void Water(ref Powder p, ref Neighbors n)
@@ -420,6 +442,23 @@ struct SimulateJob : IJobParallelFor
     }
 }
 
+struct DeleteEntitiesJob : IJobParallelFor
+{
+    [ReadOnly] public EntityArray entities;
+    [ReadOnly] public NativeHashMap<int, int> toDeleteEntities;
+    public EntityCommandBuffer.Concurrent cmdBuffer;
+
+    public void Execute(int index)
+    {
+        int dummy;
+        if (toDeleteEntities.TryGetValue(index, out dummy))
+        {
+            cmdBuffer.DestroyEntity(entities[index]);
+            PowderGame.powderCount--;
+        }
+    }
+}
+
 public class SimulationSystem : JobComponentSystem
 {
     struct Group
@@ -433,20 +472,23 @@ public class SimulationSystem : JobComponentSystem
     [Inject] SimulateBarrier m_Barrier;
 
     static NativeHashMap<int, int> positionsMap;
-    bool m_PositionsMapAllocated;
+    static NativeHashMap<int, int> toDeleteEntities;
+    bool m_TempDataAllocated;
 
 
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-        if (m_PositionsMapAllocated)
+        if (m_TempDataAllocated)
         {
             positionsMap.Dispose();
-            m_PositionsMapAllocated = false;
+            toDeleteEntities.Dispose();
+            m_TempDataAllocated = false;
         }
 
         // Compute index
         positionsMap = new NativeHashMap<int, int>(m_PowderGroup.Length, Allocator.Temp);
-        m_PositionsMapAllocated = true;
+        toDeleteEntities = new NativeHashMap<int, int>(m_PowderGroup.Length / 10, Allocator.Temp);
+        m_TempDataAllocated = true;
 
         var computeHashJob = new HashCoordJob()
         {
@@ -476,21 +518,32 @@ public class SimulationSystem : JobComponentSystem
             hashMap = positionsMap,
             rand = Rand.Create(),
             entities = m_PowderGroup.entities,
-            cmdBuffer = m_Barrier.CreateCommandBuffer()
+            cmdBuffer = m_Barrier.CreateCommandBuffer(),
+            toDeleteEntities = toDeleteEntities
         };
 
-        var simulateJobHandle = simulateJob.Schedule(m_PowderGroup.Length, 64, previousJobHandle);
-        inputDeps = simulateJobHandle;
+        previousJobHandle = simulateJob.Schedule(m_PowderGroup.Length, 64, previousJobHandle);
+
+        var deleteEntitiesJob = new DeleteEntitiesJob()
+        {
+            entities = m_PowderGroup.entities,
+            cmdBuffer = m_Barrier.CreateCommandBuffer(),
+            toDeleteEntities = toDeleteEntities
+        };
+
+        previousJobHandle = deleteEntitiesJob.Schedule(m_PowderGroup.Length, 64, previousJobHandle);
+
+        inputDeps = previousJobHandle;
 
         return inputDeps;
     }
 
     protected override void OnStopRunning()
     {
-        if (m_PositionsMapAllocated)
+        if (m_TempDataAllocated)
         {
             positionsMap.Dispose();
-            m_PositionsMapAllocated = false;
+            m_TempDataAllocated = false;
         }
     }
 }
