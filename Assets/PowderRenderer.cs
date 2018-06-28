@@ -63,6 +63,11 @@ public class PowderRenderer : MonoBehaviour
         }
         GUILayout.EndHorizontal();
 
+        if (Event.current.type == EventType.Repaint)
+        {
+            Drawing2D.DrawRect(PowderGame.pixelWorldRect, PowderGame.worldBoundariesColor, 2);
+        }
+
         GUILayout.Space(PowderGame.pixelWorldRect.height + m_UIOffset);
         GUILayout.BeginHorizontal();
         GUILayout.Space(PowderGame.pixelWorldRect.x);
