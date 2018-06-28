@@ -2,7 +2,7 @@
 using UnityEngine;
 using GraphicDNA;
 
-public class PowderRenderer : MonoBehaviour
+public class PowderUI : MonoBehaviour
 {
     public Texture2D fontImage;
     public TextAsset fontConfig;
@@ -106,6 +106,10 @@ public class PowderRenderer : MonoBehaviour
         if (GUILayout.Button("Glass"))
         {
             PowderGame.currentPowder = PowderTypes.Glass;
+        }
+        if (GUILayout.Button("Lava"))
+        {
+            PowderGame.currentPowder = PowderTypes.Lava;
         }
         GUILayout.EndHorizontal();
         Drawing2D.ClearParentBounds();

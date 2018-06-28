@@ -34,7 +34,8 @@ static class PowderTypes
     public const int Acid = 7;
     public const int Glass = 8;
     public const int Wood = 9;
-    public const int MaxType = 10;
+    public const int Lava = 10;
+    public const int MaxType = 11;
 
     public static PowderType[] values;
 
@@ -121,6 +122,15 @@ static class PowderTypes
             name = "Glass",
             creator = (coord) => new Powder { coord = coord, life = -1, type = Glass },
             renderer = GetRendererPrototype("Glass")
+        };
+        values[Lava] = new PowderType
+        {
+            color = Utils.ToColor("#FF0000"),
+            id = Lava,
+            state = PowderState.Liquid,
+            name = "Lava",
+            creator = (coord) => new Powder { coord = coord, life = -1, type = Lava },
+            renderer = GetRendererPrototype("Lava")
         };
     }
 
