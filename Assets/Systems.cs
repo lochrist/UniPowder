@@ -212,7 +212,7 @@ struct HashCoordJob : IJobParallelFor
 
 struct SpawnJob : IJob
 {
-    public NativeHashMap<int, int> hashMap;
+    [ReadOnly] public NativeHashMap<int, int> hashMap;
     [ReadOnly] public Vector2Int coord;
     public int type;
     public EntityCommandBuffer cmdBuffer;
@@ -478,12 +478,7 @@ public class SimulationSystem : JobComponentSystem
 
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-        if (m_TempDataAllocated)
-        {
-            positionsMap.Dispose();
-            toDeleteEntities.Dispose();
-            m_TempDataAllocated = false;
-        }
+        CheckDisposeTempData();
 
         // Compute index
         positionsMap = new NativeHashMap<int, int>(m_PowderGroup.Length, Allocator.Temp);
@@ -540,9 +535,15 @@ public class SimulationSystem : JobComponentSystem
 
     protected override void OnStopRunning()
     {
+        CheckDisposeTempData();
+    }
+
+    protected void CheckDisposeTempData()
+    {
         if (m_TempDataAllocated)
         {
             positionsMap.Dispose();
+            toDeleteEntities.Dispose();
             m_TempDataAllocated = false;
         }
     }
