@@ -40,11 +40,6 @@ public class PowderSystemUtils
     {
         toRemove.TryAdd(index, index);
     }
-
-    public static void ChangeElement(ref Powder p, int newElementType)
-    {
-        p = PowderTypes.values[newElementType].creator(p.coord);
-    }
 }
 
 struct Neighbors
@@ -423,12 +418,25 @@ struct SimulateJob : IJobParallelFor
 
     void Water(ref Powder p, ref Neighbors n)
     {
-
+        if (!n.BottomEmpty() && (powders[n.Bottom()].type == PowderTypes.Fire || powders[n.Bottom()].type == PowderTypes.Steam))
+        {
+            PowderSystemUtils.SchdeduleRemovePowder(ref toDeleteEntities, n.Bottom());
+        }
     }
 
     void Fire(ref Powder p, ref Neighbors n)
     {
-
+        if (!n.TopEmpty())
+        {
+            if (powders[n.Top()].type == PowderTypes.Wood)
+            {
+                ChangeElement(n.Top(), rand.Chance(2) ? PowderTypes.Fire : PowderTypes.Steam);
+            }
+            else if (powders[n.Top()].type == PowderTypes.Sand)
+            {
+                ChangeElement(n.Top(), PowderTypes.Glass);
+            }
+        }
     }
 
     void Steam(ref Powder p, ref Neighbors n)
@@ -440,6 +448,13 @@ struct SimulateJob : IJobParallelFor
     {
 
     }
+
+    void ChangeElement(int index, int newType)
+    {
+        var p = powders[index];
+        PowderSystemUtils.SchdeduleRemovePowder(ref toDeleteEntities, index);
+        PowderGame.Spawn(cmdBuffer, p.coord.x, p.coord.y, newType);
+    }
 }
 
 struct DeleteEntitiesJob : IJobParallelFor
@@ -447,9 +462,16 @@ struct DeleteEntitiesJob : IJobParallelFor
     [ReadOnly] public EntityArray entities;
     [ReadOnly] public NativeHashMap<int, int> toDeleteEntities;
     public EntityCommandBuffer.Concurrent cmdBuffer;
+    public bool first;
 
     public void Execute(int index)
     {
+        if (first && toDeleteEntities.Length > 0)
+        {
+            Debug.Log("Deleting: " + toDeleteEntities.Length);
+            first = false;
+        }
+
         int dummy;
         if (toDeleteEntities.TryGetValue(index, out dummy))
         {
@@ -482,7 +504,7 @@ public class SimulationSystem : JobComponentSystem
 
         // Compute index
         positionsMap = new NativeHashMap<int, int>(m_PowderGroup.Length, Allocator.Temp);
-        toDeleteEntities = new NativeHashMap<int, int>(m_PowderGroup.Length / 10, Allocator.Temp);
+        toDeleteEntities = new NativeHashMap<int, int>(Mathf.Max(m_PowderGroup.Length / 10, 64), Allocator.Temp);
         m_TempDataAllocated = true;
 
         var computeHashJob = new HashCoordJob()
@@ -523,7 +545,8 @@ public class SimulationSystem : JobComponentSystem
         {
             entities = m_PowderGroup.entities,
             cmdBuffer = m_Barrier.CreateCommandBuffer(),
-            toDeleteEntities = toDeleteEntities
+            toDeleteEntities = toDeleteEntities,
+            first = true
         };
 
         previousJobHandle = deleteEntitiesJob.Schedule(m_PowderGroup.Length, 64, previousJobHandle);

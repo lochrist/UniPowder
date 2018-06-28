@@ -69,8 +69,12 @@ public static class PowderGame
 
     public static void SetupWorld(EntityManager mgr)
     {
-        PerfWorld(mgr);
+        // PerfWorld(mgr);
         // DefaultWorld(mgr);
+
+        TestFire(mgr);
+        // TestWater(mgr);
+        // TestAcid(mgr);
     }
 
     public static void DefaultWorld(EntityManager mgr)
@@ -82,6 +86,30 @@ public static class PowderGame
                 Spawn(mgr, x, y, PowderTypes.Stone);
             }
         }
+    }
+
+    public static void TestWater(EntityManager mgr)
+    {
+        Spawn(mgr, 100, 101, PowderTypes.Water);
+        Spawn(mgr, 100, 100, PowderTypes.Fire);
+
+        Spawn(mgr, 200, 101, PowderTypes.Water);
+        Spawn(mgr, 200, 100, PowderTypes.Steam);
+    }
+
+    public static void TestFire(EntityManager mgr)
+    {
+        Spawn(mgr, 100, 101, PowderTypes.Sand);
+        Spawn(mgr, 100, 100, PowderTypes.Fire);
+        
+        Spawn(mgr, 200, 101, PowderTypes.Wood);
+        Spawn(mgr, 200, 100, PowderTypes.Fire);
+    }
+
+    public static void TestAcid(EntityManager mgr)
+    {
+        Spawn(mgr, 100, 101, PowderTypes.Acid);
+        Spawn(mgr, 100, 100, PowderTypes.Stone);
     }
 
     public static void PerfWorld(EntityManager mgr)
@@ -175,6 +203,17 @@ public static class PowderGame
     }
 
     public static void Spawn(EntityCommandBuffer cmdBuffer, int x, int y, int type)
+    {
+        // Debug.Log("Spawn: " + x + ", " + y);
+        cmdBuffer.CreateEntity(PowderGame.powderArchetype);
+        cmdBuffer.SetComponent(PowderTypes.values[type].creator(new Vector2Int(x, y)));
+        cmdBuffer.SetComponent(new Position2D { Value = CoordToWorld(x, y) });
+        cmdBuffer.SetComponent(new Heading2D { Value = new float2(0.0f, 1.0f) });
+        cmdBuffer.AddSharedComponent(PowderTypes.values[type].renderer);
+        powderCount++;
+    }
+
+    public static void Spawn(EntityCommandBuffer.Concurrent cmdBuffer, int x, int y, int type)
     {
         // Debug.Log("Spawn: " + x + ", " + y);
         cmdBuffer.CreateEntity(PowderGame.powderArchetype);
