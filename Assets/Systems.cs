@@ -41,6 +41,129 @@ public class PowderSystemUtils
         cmdBuffer.DestroyEntity(entities[index]);
         PowderGame.powderCount--;
     }
+
+    public static void ChangeElement(ref Powder p, int newElementType)
+    {
+        p = PowderTypes.values[newElementType].creator(p.coord);
+    }
+}
+
+struct Neighbors
+{
+    public Powder p;
+    public int index;
+    public NativeHashMap<int, int> positions;
+    int top;
+    int topLeft;
+    int topRight;
+    int left;
+    int right;
+    int bottom;
+    int bottomLeft;
+    int bottomRight;
+    public Neighbors(ref NativeHashMap<int, int> positions, Powder p, int index)
+    {
+        this.p = p;
+        this.index = index;
+        this.positions = positions;
+        top = topLeft = topRight = left = right = bottomRight = bottomLeft = bottom = -2;
+    }
+
+    public bool TopEmpty()
+    {
+        return Top() == -1;
+    }
+
+    public int Top()
+    {
+        if (top == -2)
+            top = PowderSystemUtils.GetPowderIndex(ref positions, p.coord.x, p.coord.y + 1);
+        return top;
+    }
+
+    public bool TopLeftEmpty()
+    {
+        return TopLeft() == -1;
+    }
+
+    public int TopLeft()
+    {
+        if (topLeft == -2)
+            topLeft = PowderSystemUtils.GetPowderIndex(ref positions, p.coord.x - 1, p.coord.y + 1);
+        return topLeft;
+    }
+
+    public bool TopRightEmpty()
+    {
+        return TopRight() == -1;
+    }
+
+    public int TopRight()
+    {
+        if (topRight == -2)
+            topRight = PowderSystemUtils.GetPowderIndex(ref positions, p.coord.x + 1, p.coord.y + 1);
+        return topRight;
+    }
+
+    public bool LeftEmpty()
+    {
+        return Left() == -1;
+    }
+
+    public int Left()
+    {
+        if (left == -2)
+            left = PowderSystemUtils.GetPowderIndex(ref positions, p.coord.x - 1, p.coord.y);
+        return left;
+    }
+
+    public bool RightEmpty()
+    {
+        return Right() == -1;
+    }
+
+    public int Right()
+    {
+        if (right == -2)
+            right = PowderSystemUtils.GetPowderIndex(ref positions, p.coord.x + 1, p.coord.y);
+        return right;
+    }
+
+    public bool BottomEmpty()
+    {
+        return Bottom() == -1;
+    }
+
+    public int Bottom()
+    {
+        if (bottom == -2)
+            bottom = PowderSystemUtils.GetPowderIndex(ref positions, p.coord.x, p.coord.y - 1);
+        return bottom;
+    }
+
+    public bool BottomLeftEmpty()
+    {
+        return BottomLeft() == -1;
+    }
+
+    public int BottomLeft()
+    {
+        if (bottomLeft == -2)
+            bottomLeft = PowderSystemUtils.GetPowderIndex(ref positions, p.coord.x - 1, p.coord.y - 1);
+        return bottomLeft;
+    }
+
+    public bool BottomRightEmpty()
+    {
+        return BottomRight() == -1;
+    }
+
+    public int BottomRight()
+    {
+        if (bottomRight == -2)
+            bottomRight = PowderSystemUtils.GetPowderIndex(ref positions, p.coord.x + 1, p.coord.y - 1);
+        return bottomRight;
+    }
 }
 
 struct Rand
@@ -140,17 +263,40 @@ struct SimulateJob : IJobParallelFor
             p.life--;
         }
 
+        var n = new Neighbors(ref hashMap, p, index);
+        SimulateState(ref p, ref n);
+
+        switch (p.type)
+        {
+            case PowderTypes.Acid:
+                Acid(ref p, ref n);
+                break;
+            case PowderTypes.Fire:
+                Fire(ref p, ref n);
+                break;
+            case PowderTypes.Smoke:
+                Smoke(ref p, ref n);
+                break;
+            case PowderTypes.Steam:
+                Steam(ref p, ref n);
+                break;
+            case PowderTypes.Water:
+                Water(ref p, ref n);
+                break;
+        }
+        return p;
+    }
+
+    void SimulateState(ref Powder p, ref Neighbors n)
+    {
         switch (PowderTypes.values[p.type].state)
         {
             case PowderState.Gas:
-                var topOccupied = PowderSystemUtils.IsOccupied(ref hashMap, p.coord.x, p.coord.y + 1);
-                var topLeftOccupied = PowderSystemUtils.IsOccupied(ref hashMap, p.coord.x - 1, p.coord.y + 1);
-                var topRightOccupied = PowderSystemUtils.IsOccupied(ref hashMap, p.coord.x + 1, p.coord.y + 1);
-                if (!topOccupied)
+                if (n.TopEmpty())
                 {
-                    if (!topLeftOccupied && rand.Chance(3))
+                    if (n.TopLeftEmpty() && rand.Chance(3))
                     {
-                        if (!topRightOccupied && rand.Chance(3))
+                        if (n.TopRightEmpty() && rand.Chance(3))
                         {
                             p.coord.y++;
                             p.coord.x++;
@@ -166,9 +312,9 @@ struct SimulateJob : IJobParallelFor
                         p.coord.y++;
                     }
                 }
-                else if (!topLeftOccupied)
+                else if (n.TopLeftEmpty())
                 {
-                    if (!topRightOccupied && rand.Chance(3))
+                    if (n.TopRightEmpty() && rand.Chance(3))
                     {
                         p.coord.y++;
                         p.coord.x++;
@@ -179,7 +325,7 @@ struct SimulateJob : IJobParallelFor
                         p.coord.x--;
                     }
                 }
-                else if (!topRightOccupied)
+                else if (n.TopRightEmpty())
                 {
                     p.coord.y++;
                     p.coord.x++;
@@ -187,20 +333,16 @@ struct SimulateJob : IJobParallelFor
                 break;
             case PowderState.Liquid:
                 {
-                    if (PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x, p.coord.y - 1) == -1)
+                    if (n.BottomEmpty())
                     {
                         // Nothing below, fall
                         p.coord.y--;
                     }
                     else
                     {
-                        var lowerLeftEmpty = PowderSystemUtils.IsEmpty(ref hashMap, p.coord.x - 1, p.coord.y - 1);
-                        var lowerRightEmpty = PowderSystemUtils.IsEmpty(ref hashMap, p.coord.x + 1, p.coord.y - 1);
-                        var leftEmpty = PowderSystemUtils.IsEmpty(ref hashMap, p.coord.x - 1, p.coord.y);
-                        var rightEmpty = PowderSystemUtils.IsEmpty(ref hashMap, p.coord.x + 1, p.coord.y);
-                        if (lowerLeftEmpty)
+                        if (n.BottomLeftEmpty())
                         {
-                            if (lowerRightEmpty && rand.Chance(2))
+                            if (n.BottomRightEmpty() && rand.Chance(2))
                             {
                                 p.coord.x++;
                                 p.coord.y--;
@@ -211,16 +353,16 @@ struct SimulateJob : IJobParallelFor
                                 p.coord.y--;
                             }
                         }
-                        else if (lowerRightEmpty)
+                        else if (n.BottomRightEmpty())
                         {
                             p.coord.x++;
                             p.coord.y--;
                         }
-                        else if (leftEmpty && rand.Chance(2))
+                        else if (n.LeftEmpty() && rand.Chance(2))
                         {
                             p.coord.x--;
                         }
-                        else if (rightEmpty && rand.Chance(2))
+                        else if (n.RightEmpty() && rand.Chance(2))
                         {
                             p.coord.x++;
                         }
@@ -231,19 +373,18 @@ struct SimulateJob : IJobParallelFor
                 break;
             case PowderState.Powder:
                 {
-                    var belowIndex = PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x, p.coord.y - 1);
-                    if (belowIndex == -1)
+                    if (n.BottomEmpty())
                     {
                         p.coord.y--;
                     }
-                    else if (PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y) == -1 && 
-                        PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y - 1) == -1 &&
+                    else if (n.LeftEmpty() &&
+                        n.BottomLeftEmpty() &&
                         rand.Chance(3))
                     {
                         p.coord.x--;
                     }
-                    else if (PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y) == -1 && 
-                        PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y - 1) == -1 &&
+                    else if (n.RightEmpty() &&
+                        n.BottomRightEmpty() &&
                         rand.Chance(3))
                     {
                         p.coord.x++;
@@ -251,86 +392,29 @@ struct SimulateJob : IJobParallelFor
                     break;
                 }
         }
-
-        switch (p.type)
-        {
-            case PowderTypes.Sand:
-                Sand(ref p, index);
-                break;
-            case PowderTypes.Acid:
-                Acid(ref p, index);
-                break;
-            case PowderTypes.Fire:
-                Fire(ref p, index);
-                break;
-            case PowderTypes.Glass:
-                Glass(ref p, index);
-                break;
-            case PowderTypes.Smoke:
-                Smoke(ref p, index);
-                break;
-            case PowderTypes.Steam:
-                Steam(ref p, index);
-                break;
-            case PowderTypes.Stone:
-                Stone(ref p, index);
-                break;
-            case PowderTypes.Water:
-                Water(ref p, index);
-                break;
-            case PowderTypes.Wood:
-                Wood(ref p, index);
-                break;
-        }
-        return p;
     }
 
-    bool IsOccupied(int x, int y)
-    {
-        return PowderSystemUtils.GetPowderIndex(ref hashMap, x, y) != -1;
-    }
-
-    void Sand(ref Powder p, int index)
+    void Acid(ref Powder p, ref Neighbors n)
     {
 
     }
 
-    void Wood(ref Powder p, int index)
+    void Water(ref Powder p, ref Neighbors n)
     {
 
     }
 
-    void Glass(ref Powder p, int index)
+    void Fire(ref Powder p, ref Neighbors n)
     {
 
     }
 
-    void Acid(ref Powder p, int index)
+    void Steam(ref Powder p, ref Neighbors n)
     {
 
     }
 
-    void Water(ref Powder p, int index)
-    {
-
-    }
-
-    void Fire(ref Powder p, int index)
-    {
-
-    }
-
-    void Steam(ref Powder p, int index)
-    {
-
-    }
-
-    void Stone(ref Powder p, int index)
-    {
-
-    }
-
-    void Smoke(ref Powder p, int index)
+    void Smoke(ref Powder p, ref Neighbors n)
     {
 
     }
