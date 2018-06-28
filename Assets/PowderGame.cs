@@ -26,15 +26,16 @@ public static class PowderGame
     public static Rect unitWorldRect;
     public static Vector3 unitWorldPos = new Vector3(350, 230, 0);
 
+    public static bool simulate = true;
+
     public static float xUnitPerCoord;
     public static float yUnitPerCoord;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     public static void Initialize()
     {
-        var x = (Screen.width - width) / 2;
-        var y = (Screen.height - height) / 2;
-        pixelWorldRect = new Rect(x, y, width, height);
+        // TODO: this should be data driven
+        pixelWorldRect = new Rect(23, 35, width, height);
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

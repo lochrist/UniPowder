@@ -26,6 +26,8 @@ public class PowderUI : MonoBehaviour
     public Toggle glassBtn;
     public Toggle woodBtn;
 
+    public Text pauseBtnText;
+
     private void Awake()
     {
     }
@@ -307,5 +309,11 @@ public class PowderUI : MonoBehaviour
     public void Reset()
     {
         PowderGame.Reset();
+    }
+
+    public void TogglePause()
+    {
+        PowderGame.simulate = !PowderGame.simulate;
+        pauseBtnText.text = PowderGame.simulate ? "Pause" : "Play";
     }
 }

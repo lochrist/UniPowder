@@ -584,18 +584,20 @@ public class SimulationSystem : JobComponentSystem
         }
 
         // Simulate 
-        var simulateJob = new SimulateJob()
+        if (PowderGame.simulate)
         {
-            powders = m_PowderGroup.powders,
-            positions = m_PowderGroup.positions,
-            hashMap = positionsMap,
-            rand = Rand.Create(),
-            entities = m_PowderGroup.entities,
-            cmdBuffer = m_Barrier.CreateCommandBuffer(),
-            toDeleteEntities = toDeleteEntities
-        };
-
-        previousJobHandle = simulateJob.Schedule(m_PowderGroup.Length, 64, previousJobHandle);
+            var simulateJob = new SimulateJob()
+            {
+                powders = m_PowderGroup.powders,
+                positions = m_PowderGroup.positions,
+                hashMap = positionsMap,
+                rand = Rand.Create(),
+                entities = m_PowderGroup.entities,
+                cmdBuffer = m_Barrier.CreateCommandBuffer(),
+                toDeleteEntities = toDeleteEntities
+            };
+            previousJobHandle = simulateJob.Schedule(m_PowderGroup.Length, 64, previousJobHandle);
+        }
 
         var deleteEntitiesJob = new DeleteEntitiesJob()
         {
