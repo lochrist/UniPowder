@@ -2,6 +2,7 @@
 using Unity.Entities;
 using Unity.Rendering;
 using UnityEngine;
+using Random = System.Random;
 
 public enum PowderState
 {
@@ -41,6 +42,7 @@ public static class PowderTypes
 
     public static void Init(EntityManager mgr)
     {
+        var rand = Rand.Create();
         values = new PowderType[MaxType];
         values[Sand] = new PowderType
         {
@@ -66,7 +68,7 @@ public static class PowderTypes
             id = Fire,
             state = PowderState.Gas,
             name = "Fire",
-            creator = (coord) => new Powder { coord = coord, life = 200, type = Fire },
+            creator = (coord) => new Powder { coord = coord, life = 200 + rand.Range(0, 75), type = Fire },
             renderer = GetRendererPrototype("Fire")
         };
         values[Water] = new PowderType
@@ -93,7 +95,7 @@ public static class PowderTypes
             id = Smoke,
             state = PowderState.Gas,
             name = "Smoke",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Smoke },
+            creator = (coord) => new Powder { coord = coord, life = 150 + rand.Range(0, 150), type = Smoke },
             renderer = GetRendererPrototype("Smoke")
         };
         values[Steam] = new PowderType
@@ -102,7 +104,7 @@ public static class PowderTypes
             id = Steam,
             state = PowderState.Gas,
             name = "Steam",
-            creator = (coord) => new Powder { coord = coord, life = -1, type = Steam },
+            creator = (coord) => new Powder { coord = coord, life = 200 + rand.Range(0, 200), type = Steam },
             renderer = GetRendererPrototype("Steam")
         };
         values[Acid] = new PowderType

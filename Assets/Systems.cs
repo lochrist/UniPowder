@@ -183,6 +183,11 @@ struct Rand
         return (NextInt() % chance) == 0;
     }
 
+    public int Range(int min, int max)
+    {
+        return min + NextInt() % (max - min);
+    }
+
     public static Rand Create()
     {
         return new Rand(UnityEngine.Random.Range(0, int.MaxValue));
@@ -273,14 +278,14 @@ struct SimulateJob : IJobParallelFor
             case PowderTypes.Fire:
                 Fire(ref p, ref n);
                 break;
-            case PowderTypes.Smoke:
-                Smoke(ref p, ref n);
-                break;
             case PowderTypes.Steam:
                 Steam(ref p, ref n);
                 break;
             case PowderTypes.Water:
                 Water(ref p, ref n);
+                break;
+            case PowderTypes.Lava:
+                Lava(ref p, ref n);
                 break;
         }
         return p;
@@ -418,9 +423,16 @@ struct SimulateJob : IJobParallelFor
 
     void Water(ref Powder p, ref Neighbors n)
     {
-        if (!n.BottomEmpty() && (powders[n.Bottom()].type == PowderTypes.Fire || powders[n.Bottom()].type == PowderTypes.Steam))
+        if (!n.BottomEmpty())
         {
-            PowderSystemUtils.SchdeduleRemovePowder(ref toDeleteEntities, n.Bottom());
+            if (powders[n.Bottom()].type == PowderTypes.Fire || powders[n.Bottom()].type == PowderTypes.Steam)
+            {
+                PowderSystemUtils.SchdeduleRemovePowder(ref toDeleteEntities, n.Bottom());
+            }
+            else if (powders[n.Bottom()].type == PowderTypes.Lava)
+            {
+                ChangeElement(n.index, PowderTypes.Steam);
+            }
         }
     }
 
@@ -441,12 +453,22 @@ struct SimulateJob : IJobParallelFor
 
     void Steam(ref Powder p, ref Neighbors n)
     {
-
+        if (!n.TopEmpty() && powders[n.Top()].type == PowderTypes.Stone)
+        {
+            ChangeElement(n.index, PowderTypes.Water);
+        }
     }
 
-    void Smoke(ref Powder p, ref Neighbors n)
+    void Lava(ref Powder p, ref Neighbors n)
     {
-
+        if (!n.BottomEmpty() && 
+            powders[n.Bottom()].type != PowderTypes.Fire && 
+            powders[n.Bottom()].type != PowderTypes.Lava &&
+            powders[n.Bottom()].type != PowderTypes.Stone
+            )
+        {
+            PowderSystemUtils.SchdeduleRemovePowder(ref toDeleteEntities, n.Bottom());
+        }
     }
 
     void ChangeElement(int index, int newType)
