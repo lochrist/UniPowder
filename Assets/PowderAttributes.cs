@@ -43,6 +43,29 @@ public static class PowderTypes
     public const int Wood = 9;
     public const int Lava = 10;
 
+    /*
+     liquid:
+     lava
+     water
+     acid
+
+    solid:
+    stone
+    glass
+    wood
+
+    powder:
+    sand
+
+    Gas
+    fire
+    steam
+    smoke
+
+    Generator
+
+     */
+
     public const int SandGenerator = 11;
     public const int FireGenerator = 12;
     public const int WaterGenerator = 13;

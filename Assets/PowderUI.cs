@@ -1,35 +1,53 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using GraphicDNA;
+﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class PowderUI : MonoBehaviour
 {
-    public Texture2D fontImage;
-    public TextAsset fontConfig;
-    public BitmapFont bitmapFont;
     public Rect parentRect;
 
     float m_DeltaTime = 0.0f;
     float m_UIOffset = 30;
 
+    public Text fpsText;
+    public Text particlesCountText;
+    public Text brushSizeText;
+    public Text brushTypeText;
+
+    public Toggle sandBtn;
+    public Toggle waterBtn;
+    public Toggle acidBtn;
+    public Toggle lavaBtn;
+
+    public Toggle fireBtn;
+    public Toggle steamBtn;
+    public Toggle smokeBtn;
+
+    public Toggle stoneBtn;
+    public Toggle glassBtn;
+    public Toggle woodBtn;
+
     private void Awake()
     {
-        bitmapFont = null;
-        if (fontImage && fontConfig)
-            bitmapFont = BitmapFont.FromXml(fontConfig, fontImage);
+    }
+
+    private void Start()
+    {
+        UpdateBrushSize();
+        UpdateBrushTypeText();
+        UpdateParticlesCount();
     }
 
     private void Update()
     {
         m_DeltaTime += (Time.unscaledDeltaTime - m_DeltaTime) * 0.1f;
+        UpdateFps();
+        UpdateParticlesCount();
     }
 
     private void OnGUI()
     {
+        /*
         // Set the 0,0 at the top-left corner of this panel
-        parentRect = Drawing2D.GetWorldRect(this.transform as RectTransform);
-        Drawing2D.SetParentBounds(parentRect);
-
         GUILayout.Space(PowderGame.pixelWorldRect.y - m_UIOffset);
         GUILayout.BeginHorizontal();
         GUILayout.Space(PowderGame.pixelWorldRect.x);
@@ -62,11 +80,6 @@ public class PowderUI : MonoBehaviour
             PowderGame.PrintInfo();
         }
         GUILayout.EndHorizontal();
-
-        if (Event.current.type == EventType.Repaint)
-        {
-            Drawing2D.DrawRect(PowderGame.pixelWorldRect, PowderGame.worldBoundariesColor, 2);
-        }
 
         GUILayout.Space(PowderGame.pixelWorldRect.height + m_UIOffset);
         GUILayout.BeginHorizontal();
@@ -134,6 +147,147 @@ public class PowderUI : MonoBehaviour
             PowderGame.currentPowder = PowderGame.generatorMode ? PowderTypes.LavaGenerator : PowderTypes.Lava;
         }
         GUILayout.EndHorizontal();
-        Drawing2D.ClearParentBounds();
+        */
+    }
+
+    public void UpdateFps()
+    {
+        var msec = m_DeltaTime * 1000.0f;
+        var fps = 1.0f / m_DeltaTime;
+        fpsText.text = $"FPS: {fps:0.}";
+    }
+
+    public void UpdateParticlesCount()
+    {
+        particlesCountText.text = string.Format("Particles: {0}", PowderGame.powderCount);
+    }
+
+    public void IncBrushSize()
+    {
+        if (PowderGame.brushSize < 7)
+        {
+            PowderGame.brushSize++;
+            UpdateBrushSize();
+        }
+    }
+
+    public void DecBrushSize()
+    {
+        if (PowderGame.brushSize > 0)
+        {
+            PowderGame.brushSize--;
+            UpdateBrushSize();
+        }
+    }
+
+    public void UpdateBrushSize()
+    {
+        brushSizeText.text = string.Format("Brush Size: {0}", PowderGame.brushSize);
+    }
+
+    public void ToggleGenerator(bool isOn)
+    {
+        if (isOn == PowderGame.generatorMode)
+            return;
+
+        if (PowderGame.generatorMode)
+        {
+            // Back to normal Mode 
+            if (PowderTypes.values[PowderGame.currentPowder].IsGenerator())
+                PowderGame.currentPowder = PowderTypes.values[PowderGame.currentPowder].generatedElementType;
+            PowderGame.generatorMode = isOn;
+        }
+        else
+        {
+            // Go to generator mode if we support it:
+            var generatorType = PowderTypes.FindGeneratorType(PowderGame.currentPowder);
+            if (generatorType != -1)
+            {
+                PowderGame.currentPowder = generatorType;
+                PowderGame.generatorMode = isOn;
+            }
+        }
+    }
+
+    public void ToggleSand(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Sand, sandBtn, isOn);
+    }
+
+    public void ToggleWater(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Water, waterBtn, isOn);
+    }
+
+    public void ToggleAcid(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Acid, acidBtn, isOn);
+    }
+
+    public void ToggleLava(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Lava, lavaBtn, isOn);
+    }
+
+    public void ToggleSteam(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Steam, steamBtn, isOn);
+    }
+
+    public void ToggleSmoke(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Smoke, smokeBtn, isOn);
+    }
+
+    public void ToggleFire(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Fire, fireBtn, isOn);
+    }
+
+    public void ToggleStone(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Stone, stoneBtn, isOn);
+    }
+
+    public void ToggleWood(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Wood, woodBtn, isOn);
+    }
+
+    public void ToggleGlass(bool isOn)
+    {
+        ToggleBrushType(PowderTypes.Glass, glassBtn, isOn);
+    }
+
+    public void ToggleBrushType(int type, Toggle btn, bool isOn)
+    {
+        // TODO: this shouldn't be implemented as a toggle...
+        if (PowderGame.currentPowder == type)
+            return;
+
+        if (PowderGame.generatorMode)
+        {
+            var generatorType = PowderTypes.FindGeneratorType(type);
+            if (generatorType != -1)
+            {
+                PowderGame.currentPowder = generatorType;
+            }
+        }
+        else
+        {
+            PowderGame.currentPowder = type;
+        }
+
+        UpdateBrushTypeText();
+    }
+
+    void UpdateBrushTypeText()
+    {
+        brushTypeText.text = string.Format("Brush: {0}", PowderTypes.values[PowderGame.currentPowder].name);
+    }
+
+    public void Reset()
+    {
+        PowderGame.Reset();
     }
 }

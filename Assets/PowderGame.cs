@@ -71,9 +71,9 @@ public static class PowderGame
     public static void SetupWorld(EntityManager mgr)
     {
         // PerfWorld(mgr);
-        // DefaultWorld(mgr);
+        DefaultWorld(mgr);
 
-        TestFire(mgr);
+        // TestFire(mgr);
         // TestWater(mgr);
         // TestAcid(mgr);
     }
