@@ -362,12 +362,60 @@ struct SimulateJob : IJobParallelFor
                 {
                     if (n.BottomEmpty())
                     {
-                        // Nothing below, fall
+                        if (n.BottomLeftEmpty() && rand.Chance(5))
+                        {
+                            if (n.BottomRightEmpty() && rand.Chance(2))
+                            {
+                                // Nothing below, fall
+                                p.coord.x++;
+                                p.coord.y--;
+                            }
+                            else
+                            {
+                                p.coord.x--;
+                                p.coord.y--;
+                            }
+                        }
+                        else
+                        {
+                            p.coord.y--;
+                        }
+                    }
+                    else if (n.BottomLeftEmpty())
+                    {
+                        if (n.BottomRightEmpty() && rand.Chance(2))
+                        {
+                            p.coord.x++;
+                            p.coord.y--;
+                        }
+                        else
+                        {
+                            p.coord.x--;
+                            p.coord.y--;
+                        }
+                    }
+                    else if (n.BottomRightEmpty())
+                    {
+                        p.coord.x++;
                         p.coord.y--;
                     }
-                    else
+                    else if (n.LeftEmpty() && rand.Chance(2))
                     {
-                        if (n.BottomLeftEmpty())
+                        p.coord.x--;
+                    }
+                    else if (n.RightEmpty() && rand.Chance(2))
+                    {
+                        p.coord.x++;
+                    }
+                    break;
+                }
+            case PowderState.Solid:
+                break;
+            case PowderState.Powder:
+                {
+                    if (n.BottomEmpty())
+                    {
+                        if (n.BottomLeftEmpty() && rand.Chance(3))
                         {
                             if (n.BottomRightEmpty() && rand.Chance(2))
                             {
@@ -380,41 +428,28 @@ struct SimulateJob : IJobParallelFor
                                 p.coord.y--;
                             }
                         }
-                        else if (n.BottomRightEmpty())
+                        else
+                        {
+                            p.coord.y--;
+                        }
+                    }
+                    else if (n.BottomLeftEmpty())
+                    {
+                        if (n.BottomRightEmpty() && rand.Chance(2))
                         {
                             p.coord.x++;
                             p.coord.y--;
                         }
-                        else if (n.LeftEmpty() && rand.Chance(2))
+                        else
                         {
                             p.coord.x--;
-                        }
-                        else if (n.RightEmpty() && rand.Chance(2))
-                        {
-                            p.coord.x++;
+                            p.coord.y--;
                         }
                     }
-                    break;
-                }
-            case PowderState.Solid:
-                break;
-            case PowderState.Powder:
-                {
-                    if (n.BottomEmpty())
-                    {
-                        p.coord.y--;
-                    }
-                    else if (n.LeftEmpty() &&
-                        n.BottomLeftEmpty() &&
-                        rand.Chance(3))
-                    {
-                        p.coord.x--;
-                    }
-                    else if (n.RightEmpty() &&
-                        n.BottomRightEmpty() &&
-                        rand.Chance(3))
+                    else if (n.BottomRightEmpty())
                     {
                         p.coord.x++;
+                        p.coord.y--;
                     }
                     break;
                 }
