@@ -64,7 +64,6 @@ public static class PowderGame
         xUnitPerCoord = unitWorldRect.width / width;
         yUnitPerCoord = unitWorldRect.height / height;
 
-
         SetupWorld(mgr);
     }
 

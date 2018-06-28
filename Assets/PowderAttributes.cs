@@ -190,7 +190,7 @@ public static class PowderTypes
             color = Utils.ToColor("#777777"),
             id = SandGenerator,
             state = PowderState.Solid,
-            name = "Sand Generator",
+            name = "Sand Gen",
             creator = (coord) => new Powder { coord = coord, life = -1, type = SandGenerator },
             renderer = GetRendererPrototype("Generator"),
             generatedElementType = Sand
@@ -200,7 +200,7 @@ public static class PowderTypes
             color = Utils.ToColor("#777777"),
             id = FireGenerator,
             state = PowderState.Solid,
-            name = "Fire Generator",
+            name = "Fire Gen",
             creator = (coord) => new Powder { coord = coord, life = -1, type = FireGenerator },
             renderer = GetRendererPrototype("Generator"),
             generatedElementType = Fire
@@ -210,7 +210,7 @@ public static class PowderTypes
             color = Utils.ToColor("#777777"),
             id = WaterGenerator,
             state = PowderState.Solid,
-            name = "Water Generator",
+            name = "Water Gen",
             creator = (coord) => new Powder { coord = coord, life = -1, type = WaterGenerator },
             renderer = GetRendererPrototype("Generator"),
             generatedElementType = Water
@@ -220,7 +220,7 @@ public static class PowderTypes
             color = Utils.ToColor("#777777"),
             id = SmokeGenerator,
             state = PowderState.Solid,
-            name = "Smoke Generator",
+            name = "Smoke Gen",
             creator = (coord) => new Powder { coord = coord, life = -1, type = SmokeGenerator },
             renderer = GetRendererPrototype("Generator"),
             generatedElementType = Smoke
@@ -230,7 +230,7 @@ public static class PowderTypes
             color = Utils.ToColor("#777777"),
             id = SteamGenerator,
             state = PowderState.Solid,
-            name = "Steam Generator",
+            name = "Steam Gen",
             creator = (coord) => new Powder { coord = coord, life = -1, type = SteamGenerator },
             renderer = GetRendererPrototype("Generator"),
             generatedElementType = Steam
@@ -240,7 +240,7 @@ public static class PowderTypes
             color = Utils.ToColor("#777777"),
             id = AcidGenerator,
             state = PowderState.Solid,
-            name = "Acid Generator",
+            name = "Acid Gen",
             creator = (coord) => new Powder { coord = coord, life = -1, type = AcidGenerator },
             renderer = GetRendererPrototype("Generator"),
             generatedElementType = Acid
@@ -250,7 +250,7 @@ public static class PowderTypes
             color = Utils.ToColor("#777777"),
             id = LavaGenerator,
             state = PowderState.Solid,
-            name = "Lava Generator",
+            name = "Lava Gen",
             creator = (coord) => new Powder { coord = coord, life = -1, type = LavaGenerator },
             renderer = GetRendererPrototype("Generator"),
             generatedElementType = Lava

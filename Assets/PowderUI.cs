@@ -35,6 +35,24 @@ public class PowderUI : MonoBehaviour
         UpdateBrushSize();
         UpdateBrushTypeText();
         UpdateParticlesCount();
+
+        UpdateBtnTint(PowderTypes.Sand, sandBtn);
+        UpdateBtnTint(PowderTypes.Water, waterBtn);
+        UpdateBtnTint(PowderTypes.Lava, lavaBtn);
+        UpdateBtnTint(PowderTypes.Acid, acidBtn);
+
+        UpdateBtnTint(PowderTypes.Fire, fireBtn);
+        UpdateBtnTint(PowderTypes.Steam, steamBtn);
+        UpdateBtnTint(PowderTypes.Smoke, smokeBtn);
+
+        UpdateBtnTint(PowderTypes.Glass, glassBtn);
+        UpdateBtnTint(PowderTypes.Stone, stoneBtn);
+        UpdateBtnTint(PowderTypes.Wood, woodBtn);
+    }
+
+    private void UpdateBtnTint(int type, Toggle btn)
+    {
+        btn.GetComponent<Image>().color = PowderTypes.values[type].color;
     }
 
     private void Update()
@@ -185,17 +203,15 @@ public class PowderUI : MonoBehaviour
         brushSizeText.text = string.Format("Brush Size: {0}", PowderGame.brushSize);
     }
 
+    // TODO: isOn is always false???
     public void ToggleGenerator(bool isOn)
     {
-        if (isOn == PowderGame.generatorMode)
-            return;
-
         if (PowderGame.generatorMode)
         {
             // Back to normal Mode 
             if (PowderTypes.values[PowderGame.currentPowder].IsGenerator())
                 PowderGame.currentPowder = PowderTypes.values[PowderGame.currentPowder].generatedElementType;
-            PowderGame.generatorMode = isOn;
+            PowderGame.generatorMode = !PowderGame.generatorMode;
         }
         else
         {
@@ -204,9 +220,11 @@ public class PowderUI : MonoBehaviour
             if (generatorType != -1)
             {
                 PowderGame.currentPowder = generatorType;
-                PowderGame.generatorMode = isOn;
+                PowderGame.generatorMode = !PowderGame.generatorMode;
             }
         }
+
+        UpdateBrushTypeText();
     }
 
     public void ToggleSand(bool isOn)
