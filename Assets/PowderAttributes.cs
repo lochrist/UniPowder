@@ -66,7 +66,7 @@ static class PowderTypes
             id = Fire,
             state = PowderState.Gas,
             name = "Fire",
-            creator = (coord) => new Powder { coord = coord, life = 50, type = Fire },
+            creator = (coord) => new Powder { coord = coord, life = 200, type = Fire },
             renderer = GetRendererPrototype("Fire")
         };
         values[Water] = new PowderType

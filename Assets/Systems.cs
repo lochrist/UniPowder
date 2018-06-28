@@ -31,6 +31,11 @@ public class PowderSystemUtils
         return GetPowderIndex(ref hashMap, x, y) != -1;
     }
 
+    public static bool IsEmpty(ref NativeHashMap<int, int> hashMap, int x, int y)
+    {
+        return GetPowderIndex(ref hashMap, x, y) == -1;
+    }
+
     public static void RemovePowder(ref EntityCommandBuffer.Concurrent cmdBuffer, ref EntityArray entities, int index)
     {
         cmdBuffer.DestroyEntity(entities[index]);
@@ -40,21 +45,30 @@ public class PowderSystemUtils
 
 struct Rand
 {
-    public uint seed;
-    public Rand(uint seed)
+    // Uses LCG
+    public int seed;
+    public const int a = 1664525;
+    public const int c = 1013904223;
+
+    public Rand(int seed)
     {
         this.seed = seed;
     }
 
-    public bool Chance(int chance, int something)
+    public int NextInt()
     {
-        seed++;
-        return ((seed + something) % chance) == 0;
+        seed = (seed * a + c) % int.MaxValue;
+        return seed;
+    }
+
+    public bool Chance(int chance)
+    {
+        return (NextInt() % chance) == 0;
     }
 
     public static Rand Create()
     {
-        return new Rand((uint)(UnityEngine.Random.value * int.MaxValue));
+        return new Rand(UnityEngine.Random.Range(0, int.MaxValue));
     }
 }
 
@@ -134,9 +148,9 @@ struct SimulateJob : IJobParallelFor
                 var topRightOccupied = PowderSystemUtils.IsOccupied(ref hashMap, p.coord.x + 1, p.coord.y + 1);
                 if (!topOccupied)
                 {
-                    if (!topLeftOccupied && rand.Chance(3, index))
+                    if (!topLeftOccupied && rand.Chance(3))
                     {
-                        if (!topRightOccupied && rand.Chance(3, index))
+                        if (!topRightOccupied && rand.Chance(3))
                         {
                             p.coord.y++;
                             p.coord.x++;
@@ -154,7 +168,7 @@ struct SimulateJob : IJobParallelFor
                 }
                 else if (!topLeftOccupied)
                 {
-                    if (!topRightOccupied && rand.Chance(3, index))
+                    if (!topRightOccupied && rand.Chance(3))
                     {
                         p.coord.y++;
                         p.coord.x++;
@@ -180,13 +194,13 @@ struct SimulateJob : IJobParallelFor
                     }
                     else
                     {
-                        var lowerLeftEmpty = PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y - 1) == -1;
-                        var lowerRightEmpty = PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y - 1) == -1;
-                        var leftEmpty = PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y) == -1;
-                        var rightEmpty = PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y) == -1;
+                        var lowerLeftEmpty = PowderSystemUtils.IsEmpty(ref hashMap, p.coord.x - 1, p.coord.y - 1);
+                        var lowerRightEmpty = PowderSystemUtils.IsEmpty(ref hashMap, p.coord.x + 1, p.coord.y - 1);
+                        var leftEmpty = PowderSystemUtils.IsEmpty(ref hashMap, p.coord.x - 1, p.coord.y);
+                        var rightEmpty = PowderSystemUtils.IsEmpty(ref hashMap, p.coord.x + 1, p.coord.y);
                         if (lowerLeftEmpty)
                         {
-                            if (lowerRightEmpty && rand.Chance(2, index))
+                            if (lowerRightEmpty && rand.Chance(2))
                             {
                                 p.coord.x++;
                                 p.coord.y--;
@@ -202,11 +216,11 @@ struct SimulateJob : IJobParallelFor
                             p.coord.x++;
                             p.coord.y--;
                         }
-                        else if (leftEmpty && rand.Chance(2, index))
+                        else if (leftEmpty && rand.Chance(2))
                         {
                             p.coord.x--;
                         }
-                        else if (rightEmpty && rand.Chance(2, index))
+                        else if (rightEmpty && rand.Chance(2))
                         {
                             p.coord.x++;
                         }
@@ -224,13 +238,13 @@ struct SimulateJob : IJobParallelFor
                     }
                     else if (PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y) == -1 && 
                         PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x - 1, p.coord.y - 1) == -1 &&
-                        rand.Chance(3, index))
+                        rand.Chance(3))
                     {
                         p.coord.x--;
                     }
                     else if (PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y) == -1 && 
                         PowderSystemUtils.GetPowderIndex(ref hashMap, p.coord.x + 1, p.coord.y - 1) == -1 &&
-                        rand.Chance(3, index))
+                        rand.Chance(3))
                     {
                         p.coord.x++;
                     }
