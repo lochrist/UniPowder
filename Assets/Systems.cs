@@ -216,19 +216,36 @@ struct SpawnJob : IJob
     [ReadOnly] public Vector2Int coord;
     public int type;
     public EntityCommandBuffer cmdBuffer;
+    public bool isPainting;
     public void Execute()
     {
-        var size = 0;
-        for (var y = coord.y - PowderGame.brushSize; y <= coord.y + PowderGame.brushSize; ++y)
+        if (PowderTypes.values[type].IsGenerator())
         {
-            for (var x = coord.x - size; x <= coord.x + size; ++x)
+            if (!isPainting)
             {
-                if (!PowderSystemUtils.IsOccupied(ref hashMap, x, y))
+                for (var x = coord.x - PowderGame.brushSize; x <= coord.x + PowderGame.brushSize; ++x)
                 {
-                    PowderGame.Spawn(cmdBuffer, x, y, type);
+                    if (!PowderSystemUtils.IsOccupied(ref hashMap, x, coord.y))
+                    {
+                        PowderGame.Spawn(ref cmdBuffer, x, coord.y, type);
+                    }
                 }
             }
-            size += y < coord.y ? 1 : -1;
+        }
+        else
+        {
+            var size = 0;
+            for (var y = coord.y - PowderGame.brushSize; y <= coord.y + PowderGame.brushSize; ++y)
+            {
+                for (var x = coord.x - size; x <= coord.x + size; ++x)
+                {
+                    if (!PowderSystemUtils.IsOccupied(ref hashMap, x, y))
+                    {
+                        PowderGame.Spawn(ref cmdBuffer, x, y, type);
+                    }
+                }
+                size += y < coord.y ? 1 : -1;
+            }
         }
     }
 }
@@ -286,6 +303,12 @@ struct SimulateJob : IJobParallelFor
                 break;
             case PowderTypes.Lava:
                 Lava(ref p, ref n);
+                break;
+            default:
+                if (PowderTypes.values[p.type].IsGenerator())
+                {
+                    Generate(ref p, ref n);
+                }
                 break;
         }
         return p;
@@ -471,11 +494,29 @@ struct SimulateJob : IJobParallelFor
         }
     }
 
+    void Generate(ref Powder p, ref Neighbors n)
+    {
+        var generatedType = PowderTypes.values[p.type].generatedElementType;
+        if (PowderTypes.values[generatedType].state == PowderState.Liquid || PowderTypes.values[generatedType].state == PowderState.Powder)
+        {
+            if (n.TopEmpty())
+            {
+                var generatedPowder = PowderTypes.values[generatedType].creator(new Vector2Int(p.coord.x, p.coord.y - 1));
+                PowderGame.Spawn(ref cmdBuffer, generatedPowder);
+            }
+        }
+        else if (n.BottomEmpty())
+        {
+            var generatedPowder = PowderTypes.values[generatedType].creator(new Vector2Int(p.coord.x, p.coord.y + 1));
+            PowderGame.Spawn(ref cmdBuffer, generatedPowder);
+        }
+    }
+
     void ChangeElement(int index, int newType)
     {
         var p = powders[index];
         PowderSystemUtils.SchdeduleRemovePowder(ref toDeleteEntities, index);
-        PowderGame.Spawn(cmdBuffer, p.coord.x, p.coord.y, newType);
+        PowderGame.Spawn(ref cmdBuffer, p.coord.x, p.coord.y, newType);
     }
 }
 
@@ -484,16 +525,8 @@ struct DeleteEntitiesJob : IJobParallelFor
     [ReadOnly] public EntityArray entities;
     [ReadOnly] public NativeHashMap<int, int> toDeleteEntities;
     public EntityCommandBuffer.Concurrent cmdBuffer;
-    public bool first;
-
     public void Execute(int index)
     {
-        if (first && toDeleteEntities.Length > 0)
-        {
-            Debug.Log("Deleting: " + toDeleteEntities.Length);
-            first = false;
-        }
-
         int dummy;
         if (toDeleteEntities.TryGetValue(index, out dummy))
         {
@@ -544,7 +577,8 @@ public class SimulationSystem : JobComponentSystem
                 hashMap = positionsMap,
                 coord = coord,
                 cmdBuffer = m_Barrier.CreateCommandBuffer(),
-                type = PowderGame.currentPowder
+                type = PowderGame.currentPowder,
+                isPainting = !Input.GetMouseButtonDown(0)
             };
             previousJobHandle = spawnJob.Schedule(previousJobHandle);
         }
@@ -567,8 +601,7 @@ public class SimulationSystem : JobComponentSystem
         {
             entities = m_PowderGroup.entities,
             cmdBuffer = m_Barrier.CreateCommandBuffer(),
-            toDeleteEntities = toDeleteEntities,
-            first = true
+            toDeleteEntities = toDeleteEntities
         };
 
         previousJobHandle = deleteEntitiesJob.Schedule(m_PowderGroup.Length, 64, previousJobHandle);

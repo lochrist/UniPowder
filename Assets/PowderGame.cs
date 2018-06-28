@@ -19,6 +19,7 @@ public static class PowderGame
 
     public static int brushSize = 1;
     public static int currentPowder = PowderTypes.Sand;
+    public static bool generatorMode = false;
     public static Camera mainCamera;
 
     public static Rect pixelWorldRect;
@@ -202,18 +203,36 @@ public static class PowderGame
         return e;
     }
 
-    public static void Spawn(EntityCommandBuffer cmdBuffer, int x, int y, int type)
+    public static void Spawn(ref EntityCommandBuffer cmdBuffer, int x, int y, int type)
+    {
+        // Debug.Log("Spawn: " + x + ", " + y);
+        var p = PowderTypes.values[type].creator(new Vector2Int(x, y));
+        Spawn(ref cmdBuffer, p);
+    }
+
+    public static void Spawn(ref EntityCommandBuffer cmdBuffer, Powder p)
     {
         // Debug.Log("Spawn: " + x + ", " + y);
         cmdBuffer.CreateEntity(PowderGame.powderArchetype);
-        cmdBuffer.SetComponent(PowderTypes.values[type].creator(new Vector2Int(x, y)));
-        cmdBuffer.SetComponent(new Position2D { Value = CoordToWorld(x, y) });
+        cmdBuffer.SetComponent(p);
+        cmdBuffer.SetComponent(new Position2D { Value = CoordToWorld(p.coord.x, p.coord.y) });
         cmdBuffer.SetComponent(new Heading2D { Value = new float2(0.0f, 1.0f) });
-        cmdBuffer.AddSharedComponent(PowderTypes.values[type].renderer);
+        cmdBuffer.AddSharedComponent(PowderTypes.values[p.type].renderer);
         powderCount++;
     }
 
-    public static void Spawn(EntityCommandBuffer.Concurrent cmdBuffer, int x, int y, int type)
+    public static void Spawn(ref EntityCommandBuffer.Concurrent cmdBuffer, Powder p)
+    {
+        // Debug.Log("Spawn: " + x + ", " + y);
+        cmdBuffer.CreateEntity(PowderGame.powderArchetype);
+        cmdBuffer.SetComponent(p);
+        cmdBuffer.SetComponent(new Position2D { Value = CoordToWorld(p.coord.x, p.coord.y) });
+        cmdBuffer.SetComponent(new Heading2D { Value = new float2(0.0f, 1.0f) });
+        cmdBuffer.AddSharedComponent(PowderTypes.values[p.type].renderer);
+        powderCount++;
+    }
+
+    public static void Spawn(ref EntityCommandBuffer.Concurrent cmdBuffer, int x, int y, int type)
     {
         // Debug.Log("Spawn: " + x + ", " + y);
         cmdBuffer.CreateEntity(PowderGame.powderArchetype);

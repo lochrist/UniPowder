@@ -71,17 +71,39 @@ public class PowderUI : MonoBehaviour
         GUILayout.Space(PowderGame.pixelWorldRect.height + m_UIOffset);
         GUILayout.BeginHorizontal();
         GUILayout.Space(PowderGame.pixelWorldRect.x);
+        var toggleMode = GUILayout.Toggle(PowderGame.generatorMode, "Generator");
+        if (PowderGame.generatorMode != toggleMode)
+        {
+            if (PowderGame.generatorMode)
+            {
+                // Back to normal Mode 
+                if (PowderTypes.values[PowderGame.currentPowder].IsGenerator())
+                    PowderGame.currentPowder = PowderTypes.values[PowderGame.currentPowder].generatedElementType;
+                PowderGame.generatorMode = toggleMode;
+            }
+            else
+            {
+                // Go to generator mode if we support it:
+                var generatorType = PowderTypes.FindGeneratorType(PowderGame.currentPowder);
+                if (generatorType != -1)
+                {
+                    PowderGame.currentPowder = generatorType;
+                    PowderGame.generatorMode = toggleMode;
+                }
+            }
+        }
+
         if (GUILayout.Button("Sand"))
         {
-            PowderGame.currentPowder = PowderTypes.Sand;
+            PowderGame.currentPowder = PowderGame.generatorMode ? PowderTypes.SandGenerator : PowderTypes.Sand;
         }
         if (GUILayout.Button("Water"))
         {
-            PowderGame.currentPowder = PowderTypes.Water;
+            PowderGame.currentPowder = PowderGame.generatorMode ? PowderTypes.WaterGenerator : PowderTypes.Water;
         }
         if (GUILayout.Button("Fire"))
         {
-            PowderGame.currentPowder = PowderTypes.Fire;
+            PowderGame.currentPowder = PowderGame.generatorMode ? PowderTypes.FireGenerator : PowderTypes.Fire;
         }
         if (GUILayout.Button("Stone"))
         {
@@ -93,15 +115,15 @@ public class PowderUI : MonoBehaviour
         }
         if (GUILayout.Button("Smoke"))
         {
-            PowderGame.currentPowder = PowderTypes.Smoke;
+            PowderGame.currentPowder = PowderGame.generatorMode ? PowderTypes.SmokeGenerator : PowderTypes.Smoke;
         }
         if (GUILayout.Button("Steam"))
         {
-            PowderGame.currentPowder = PowderTypes.Steam;
+            PowderGame.currentPowder = PowderGame.generatorMode ? PowderTypes.SteamGenerator : PowderTypes.Steam;
         }
         if (GUILayout.Button("Acid"))
         {
-            PowderGame.currentPowder = PowderTypes.Acid;
+            PowderGame.currentPowder = PowderGame.generatorMode ? PowderTypes.AcidGenerator : PowderTypes.Acid;
         }
         if (GUILayout.Button("Glass"))
         {
@@ -109,7 +131,7 @@ public class PowderUI : MonoBehaviour
         }
         if (GUILayout.Button("Lava"))
         {
-            PowderGame.currentPowder = PowderTypes.Lava;
+            PowderGame.currentPowder = PowderGame.generatorMode ? PowderTypes.LavaGenerator : PowderTypes.Lava;
         }
         GUILayout.EndHorizontal();
         Drawing2D.ClearParentBounds();
