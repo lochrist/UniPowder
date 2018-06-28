@@ -2,7 +2,6 @@
 using Unity.Entities;
 using Unity.Rendering;
 using UnityEngine;
-using Random = System.Random;
 
 public enum PowderState
 {
@@ -275,7 +274,6 @@ public static class PowderTypes
             throw new Exception("Cannot find " + protoName);
         }
         var result = proto.GetComponent<MeshInstanceRendererComponent>().Value;
-        var vertices = result.mesh.vertices;
         UnityEngine.Object.Destroy(proto);
         return result;
     }

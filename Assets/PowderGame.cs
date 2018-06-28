@@ -1,9 +1,7 @@
 ﻿using System;
-using System.CodeDom;
 using System.Text;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using Unity.Transforms;
 using Unity.Transforms2D;
 using UnityEngine;
@@ -12,9 +10,7 @@ public static class PowderGame
 {
     public static int height = 480;
     public static int width = 640;
-    public static int frame = 0;
     public static int powderCount = 0;
-    public static Color worldBoundariesColor = Color.white;
     public static EntityArchetype powderArchetype;
 
     public static int brushSize = 1;
